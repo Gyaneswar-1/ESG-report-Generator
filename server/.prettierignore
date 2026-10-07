@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+logs
+*.log
+.env
+.env.*
+prisma/*.json
+prisma/*.d.ts
+src/db/contract.json
+src/db/contract.d.ts
+package-lock.json
