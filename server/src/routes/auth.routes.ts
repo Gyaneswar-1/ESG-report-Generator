@@ -50,10 +50,7 @@ const issueToken = (user: { id: number; email: string; name: string; role: AppRo
 
 router.post('/login', async (req, res, next) => {
   try {
-    await ensureAuthSchema();
     if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) return res.status(503).json({ message: 'Set JWT_SECRET to at least 32 characters in the server environment.' });
-    const configuredUsers = await authPool.query('SELECT COUNT(*)::int AS count FROM esg_users');
-    if (configuredUsers.rows[0].count === 0) return res.status(503).json({ message: 'Set BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD to create the CSO / Super Admin account.' });
     const body = z.object({ email: z.string().email(), password: z.string().min(1), role: z.enum(roles as [AppRole, ...AppRole[]]) }).safeParse(req.body);
     if (!body.success) return res.status(400).json({ message: 'Choose a role and enter a valid email and password.' });
     const email = body.data.email.trim().toLowerCase();
@@ -64,7 +61,12 @@ router.post('/login', async (req, res, next) => {
       const submittedPassword = Buffer.from(body.data.password);
       const passwordMatches = configuredPassword.length === submittedPassword.length && timingSafeEqual(configuredPassword, submittedPassword);
       if (!envEmail || email !== envEmail || !passwordMatches) return res.status(401).json({ message: 'CSO credentials do not match the server environment.' });
+      const user = { id: 0, email: envEmail, name: 'CSO / Super Admin', role: 'executive' as const };
+      return res.json({ data: { user, token: issueToken(user) } });
     }
+    await ensureAuthSchema();
+    const configuredUsers = await authPool.query('SELECT COUNT(*)::int AS count FROM esg_users');
+    if (configuredUsers.rows[0].count === 0) return res.status(503).json({ message: 'No portal accounts are configured yet.' });
     const { rows } = await authPool.query('SELECT id,email,name,password_hash AS "passwordHash",role FROM esg_users WHERE email=$1', [email]);
     if (!rows.length || rows[0].role !== body.data.role || !(await compare(body.data.password, rows[0].passwordHash))) return res.status(401).json({ message: 'Email or password is incorrect for the selected role.' });
     const user = { id: Number(rows[0].id), email: rows[0].email, name: rows[0].name, role: rows[0].role as AppRole };
