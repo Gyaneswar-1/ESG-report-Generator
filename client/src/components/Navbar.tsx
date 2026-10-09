@@ -24,7 +24,7 @@ interface NavbarProps {
   onSwitchRole: () => void
 }
 
-const roleNames: Record<UserRole, string> = { engineer: 'Site Engineer', hse: 'HSE Officer', executive: 'CSO / Executive', auditor: 'Statutory Auditor' }
+const roleNames: Record<UserRole, string> = { engineer: 'Site Engineer', hse: 'HSE Officer', subsidiary_head: 'Subsidiary Head', executive: 'CSO / Executive', auditor: 'Statutory Auditor' }
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateClick, role, name, onSwitchRole }) => {
   return (

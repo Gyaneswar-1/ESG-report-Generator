@@ -1,60 +1,49 @@
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { Box, Button, Card, CardActionArea, Container, Stack, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Card, CardContent, Container, Stack, TextField, Typography } from '@mui/material'
 import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined'
-import EngineeringOutlinedIcon from '@mui/icons-material/EngineeringOutlined'
-import HealthAndSafetyOutlinedIcon from '@mui/icons-material/HealthAndSafetyOutlined'
-import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined'
-import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
-import { signIn, type UserRole } from '../store/authSlice'
+import LoginRoundedIcon from '@mui/icons-material/LoginRounded'
+import { signIn } from '../store/authSlice'
 import type { AppDispatch } from '../store'
-
-const roles: { id: UserRole; title: string; description: string; icon: React.ReactNode }[] = [
-  { id: 'engineer', title: 'Site Engineer', description: 'Data entry, site metrics, evidence uploads', icon: <EngineeringOutlinedIcon /> },
-  { id: 'hse', title: 'HSE Officer', description: 'Safety incidents, working hours, headcount', icon: <HealthAndSafetyOutlinedIcon /> },
-  { id: 'executive', title: 'CSO / Executive', description: 'Group KPIs, emissions, site comparisons', icon: <InsightsOutlinedIcon /> },
-  { id: 'auditor', title: 'Statutory Auditor', description: 'Evidence verification, audit trails, reports', icon: <FactCheckOutlinedIcon /> },
-]
+import { useLoginMutation } from '../store/api'
 
 export function RoleEntry() {
   const dispatch = useDispatch<AppDispatch>()
-  const [selected, setSelected] = useState<UserRole | null>(null)
-  const [name, setName] = useState('')
+  const [login, { isLoading, error }] = useLoginMutation()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
-  const enter = () => selected && dispatch(signIn({ role: selected, name: name.trim() || roles.find((role) => role.id === selected)!.title }))
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    try {
+      const result = await login({ email, password }).unwrap()
+      dispatch(signIn({ role: result.data.user.role, name: result.data.user.name, token: result.data.token }))
+    } catch { /* the API error is displayed below */ }
+  }
 
-  return (
-    <Box className="entry-page">
-      <Container maxWidth="md">
-        <Box className="entry-shell">
-          <Box className="entry-brand">
-            <PublicOutlinedIcon sx={{ fontSize: 25, color: 'primary.main' }} />
-            <Typography variant="h5">EcoTrace ESG Portal</Typography>
-            <Typography color="text.secondary">One simple workspace for every ESG role</Typography>
-          </Box>
-          <Stack direction="row" spacing={1} sx={{ mb: 2.5, alignItems: 'center', justifyContent: 'center' }}>
-            <Box className="step-dot active">1</Box><Typography variant="body2">Choose your role</Typography>
-            <Box className="step-line" /><Box className="step-dot">2</Box><Typography variant="body2" color="text.secondary">Open your workspace</Typography>
-          </Stack>
-          <Box className="role-grid">
-            {roles.map((role) => (
-              <Card key={role.id} className={`role-card ${selected === role.id ? 'selected' : ''}`}>
-                <CardActionArea onClick={() => setSelected(role.id)} sx={{ height: '100%', p: 2 }}>
-                  <Box className="role-icon">{role.icon}</Box>
-                  <Typography variant="h6" sx={{ mt: 1 }}>{role.title}</Typography>
-                  <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>{role.description}</Typography>
-                </CardActionArea>
-              </Card>
-            ))}
-          </Box>
-          <Box className="entry-actions">
-            <TextField size="small" label="Your name" placeholder="e.g. Asha Das" value={name} onChange={(event) => setName(event.target.value)} />
-            <Button size="large" variant="contained" endIcon={<ArrowForwardRoundedIcon />} disabled={!selected} onClick={enter}>Continue to workspace</Button>
-          </Box>
-          <Typography className="entry-note" variant="caption">Select the role that matches your work. You can switch roles from your profile menu.</Typography>
+  const message = error && typeof error === 'object' && 'data' in error && typeof error.data === 'object' && error.data && 'message' in error.data
+    ? String(error.data.message) : 'Could not connect to the portal. Check that the server is running.'
+
+  return <Box className="entry-page"><Container maxWidth="sm">
+    <Card sx={{ maxWidth: 460, mx: 'auto', borderRadius: 4, boxShadow: '0 20px 60px rgba(15,23,42,.08)' }}>
+      <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+        <Stack spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
+          <Box sx={{ display: 'grid', placeItems: 'center', width: 48, height: 48, borderRadius: 3, bgcolor: '#dbeafe' }}><PublicOutlinedIcon color="primary" /></Box>
+          <Typography variant="h5" sx={{ fontWeight: 750 }}>EcoTrace ESG Portal</Typography>
+          <Typography variant="body2" color="text.secondary">Sign in to your assigned workspace</Typography>
+        </Stack>
+        <Box component="form" onSubmit={submit} sx={{ display: 'grid', gap: 2 }}>
+          <TextField required type="email" label="Work email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <TextField required type="password" label="Password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          {error && <Alert severity="error">{message}</Alert>}
+          <Button type="submit" size="large" variant="contained" endIcon={<LoginRoundedIcon />} disabled={isLoading || !email || !password} sx={{ minHeight: 48 }}>
+            {isLoading ? 'Signing in…' : 'Sign in'}
+          </Button>
         </Box>
-      </Container>
-    </Box>
-  )
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2.5 }}>
+          Portal access is assigned by your administrator. Your role and site access are checked by the server.
+        </Typography>
+      </CardContent>
+    </Card>
+  </Container></Box>
 }
