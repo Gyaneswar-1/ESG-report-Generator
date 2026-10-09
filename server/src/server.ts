@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { morganMiddleware } from './middleware/morgan.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import health from './routes/health.routes.js';
+import records from './routes/records.routes.js';
 
 export const app: Application = express();
 
@@ -13,6 +14,7 @@ app.use(cookieParser());
 app.use(morganMiddleware);
 
 app.use('/api/v1', health);
+app.use('/api/v1', records);
 
 app.use(errorHandler);
 

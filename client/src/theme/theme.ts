@@ -4,21 +4,22 @@ export const esgTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#0f172a', // Deep Slate / Monochromatic primary
-      light: '#334155',
-      dark: '#020617',
+      main: '#2563eb',
+      light: '#60a5fa',
+      dark: '#1d4ed8',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#475569', // Neutral Slate
-      light: '#64748b',
-      dark: '#1e293b',
+      main: '#0891b2',
+      light: '#22d3ee',
+      dark: '#0e7490',
       contrastText: '#ffffff',
     },
     background: {
       default: '#f8fafc', // Clean neutral background
       paper: '#ffffff',
     },
+    warning: { main: '#d97706', light: '#fbbf24', dark: '#b45309' },
     text: {
       primary: '#0f172a',
       secondary: '#475569',
@@ -117,10 +118,10 @@ export const esgTheme = createTheme({
           },
         },
         contained: {
-          backgroundColor: '#0f172a',
+          backgroundColor: '#2563eb',
           color: '#ffffff',
           '&:hover': {
-            backgroundColor: '#1e293b',
+            backgroundColor: '#1d4ed8',
           },
         },
         outlined: {
@@ -236,7 +237,7 @@ export const esgTheme = createTheme({
     MuiTabs: {
       styleOverrides: {
         indicator: {
-          backgroundColor: '#0f172a',
+          backgroundColor: '#2563eb',
           height: 2,
         },
       },
@@ -252,7 +253,7 @@ export const esgTheme = createTheme({
             borderColor: '#94a3b8',
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#0f172a',
+            borderColor: '#2563eb',
             borderWidth: '1.5px',
           },
         },
@@ -282,7 +283,7 @@ export const esgTheme = createTheme({
         },
         bar: {
           borderRadius: 3,
-          backgroundColor: '#1e293b',
+          backgroundColor: '#0891b2',
         },
       },
     },

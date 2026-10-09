@@ -12,13 +12,21 @@ import BusinessIcon from '@mui/icons-material/Business'
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined'
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined'
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
+import { IconButton } from '@mui/material'
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
+import type { UserRole } from '../store/authSlice'
 
 interface NavbarProps {
   onOpenReportModal: () => void
   onGenerateClick?: () => void
+  role: UserRole
+  name: string
+  onSwitchRole: () => void
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateClick }) => {
+const roleNames: Record<UserRole, string> = { engineer: 'Site Engineer', hse: 'HSE Officer', executive: 'CSO / Executive', auditor: 'Statutory Auditor' }
+
+export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateClick, role, name, onSwitchRole }) => {
   return (
     <AppBar position="sticky" color="default" sx={{ bgcolor: '#ffffff' }}>
       <Toolbar
@@ -64,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateCli
                 EcoPulse
               </Typography>
               <Chip
-                label="Enterprise ESG v2.4"
+                label={roleNames[role]}
                 size="small"
                 variant="outlined"
                 sx={{
@@ -118,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateCli
 
         {/* Action Controls */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Button
+          {(role === 'executive' || role === 'auditor') && <Button
             variant="outlined"
             size="small"
             startIcon={<PictureAsPdfOutlinedIcon fontSize="small" />}
@@ -126,16 +134,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateCli
             sx={{ fontWeight: 600, fontSize: '0.8125rem' }}
           >
             Sample Statutory PDF
-          </Button>
+          </Button>}
+          <Tooltip title={`Switch role${name ? ` · ${name}` : ''}`}>
+            <IconButton onClick={onSwitchRole} aria-label="Switch role" size="small" sx={{ color: 'text.secondary', border: '1px solid', borderColor: 'divider' }}>
+              <LogoutOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
 
-          <Button
+          {(role === 'executive' || role === 'auditor') && <Button
             variant="contained"
             size="small"
             onClick={onGenerateClick}
             sx={{ fontWeight: 600, fontSize: '0.8125rem' }}
           >
             Generate Report
-          </Button>
+          </Button>}
         </Box>
       </Toolbar>
     </AppBar>

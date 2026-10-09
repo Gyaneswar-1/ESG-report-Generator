@@ -1,126 +1,34 @@
-import React, { useState } from 'react'
-import {
-  ThemeProvider,
-  CssBaseline,
-  Box,
-  Container,
-  Tabs,
-  Tab,
-  Paper,
-} from '@mui/material'
-import AutoGraphOutlinedIcon from '@mui/icons-material/AutoGraphOutlined'
-import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined'
-import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined'
-import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined'
-
+import React from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { AppBar, Avatar, Box, Button, Chip, CssBaseline, ThemeProvider, Toolbar, Typography } from '@mui/material'
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import { esgTheme } from './theme/theme'
-import { Navbar } from './components/Navbar'
-import { OverviewMetrics } from './components/OverviewMetrics'
-import { ReportGenerator } from './components/ReportGenerator'
-import { DisclosuresTable } from './components/DisclosuresTable'
-import { AuditLedger } from './components/AuditLedger'
-import { FrameworkMapping } from './components/FrameworkMapping'
-import { ReportModal } from './components/ReportModal'
-import { Footer } from './components/Footer'
+import { RoleEntry } from './components/RoleEntry'
+import { RecordWorkspace } from './components/RecordWorkspace'
+import { signOut, type UserRole } from './store/authSlice'
+import type { RootState, AppDispatch } from './store'
+
+const roleTitles: Record<UserRole, string> = { engineer: 'Site Engineer', hse: 'HSE Officer', executive: 'CSO / Executive', auditor: 'Statutory Auditor' }
 
 export const App: React.FC = () => {
-  const [reportModalOpen, setReportModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState(0)
-
-  const handleOpenReportModal = () => {
-    setReportModalOpen(true)
-  }
-
-  const handleCloseReportModal = () => {
-    setReportModalOpen(false)
-  }
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
-
-  const handleGenerateClick = () => {
-    setActiveTab(0)
-    window.scrollTo({ top: 280, behavior: 'smooth' })
-  }
+  const { role, name } = useSelector((state: RootState) => state.auth)
+  const dispatch = useDispatch<AppDispatch>()
 
   return (
     <ThemeProvider theme={esgTheme}>
       <CssBaseline />
-      <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
-        {/* Top Professional Navigation */}
-        <Navbar
-          onOpenReportModal={handleOpenReportModal}
-          onGenerateClick={handleGenerateClick}
-        />
-
-        {/* Main Application Workspace */}
-        <Container maxWidth="xl" sx={{ py: 3.5, flex: 1 }}>
-          {/* Executive KPI Summary */}
-          <OverviewMetrics />
-
-          {/* Functional Workspaces / View Switcher */}
-          <Paper sx={{ mb: 3, border: '1px solid #e2e8f0', bgcolor: '#ffffff', borderRadius: 1 }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              sx={{
-                px: 2,
-                minHeight: 46,
-                '& .MuiTab-root': {
-                  minHeight: 46,
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  flexDirection: 'row',
-                  gap: 1,
-                  alignItems: 'center',
-                },
-              }}
-            >
-              <Tab
-                icon={<AutoGraphOutlinedIcon sx={{ fontSize: 18 }} />}
-                label="Report Automation & Synthesis"
-              />
-              <Tab
-                icon={<TableChartOutlinedIcon sx={{ fontSize: 18 }} />}
-                label="Statutory Disclosures (E, S, G)"
-              />
-              <Tab
-                icon={<ShieldOutlinedIcon sx={{ fontSize: 18 }} />}
-                label="Audit Trail & Proof Ledger"
-              />
-              <Tab
-                icon={<AccountBalanceOutlinedIcon sx={{ fontSize: 18 }} />}
-                label="Framework Compliance Matrix"
-              />
-            </Tabs>
-          </Paper>
-
-          {/* Active Tab Panel */}
-          {activeTab === 0 && (
-            <ReportGenerator onOpenReportModal={handleOpenReportModal} />
-          )}
-
-          {activeTab === 1 && (
-            <DisclosuresTable />
-          )}
-
-          {activeTab === 2 && (
-            <AuditLedger />
-          )}
-
-          {activeTab === 3 && (
-            <FrameworkMapping />
-          )}
-        </Container>
-
-        {/* Minimal Footer */}
-        <Footer />
-
-        {/* Formal Statutory Report Inspection Modal */}
-        <ReportModal open={reportModalOpen} onClose={handleCloseReportModal} />
-      </Box>
+      {!role ? <RoleEntry /> : <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
+        <AppBar position="sticky" color="default">
+          <Toolbar sx={{ maxWidth: 1200, width: '100%', mx: 'auto', px: { xs: 2, sm: 3 }, minHeight: 68, gap: 1.5 }}>
+            <Box sx={{ display: 'grid', placeItems: 'center', width: 38, height: 38, borderRadius: 2, bgcolor: '#dbeafe', color: 'primary.main', fontWeight: 800 }}>E</Box>
+            <Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 750, color: 'text.primary' }}>EcoTrace</Typography><Typography variant="caption" color="text.secondary">ESG data entry</Typography></Box>
+            <Chip size="small" label={roleTitles[role]} color="primary" variant="outlined" />
+            <Avatar sx={{ width: 32, height: 32, bgcolor: '#e0f2fe', color: '#0e7490', fontSize: 14 }}>{(name || roleTitles[role]).slice(0, 1).toUpperCase()}</Avatar>
+            <Button color="inherit" size="small" onClick={() => dispatch(signOut())} startIcon={<LogoutRoundedIcon />}>Switch role</Button>
+          </Toolbar>
+        </AppBar>
+        <RecordWorkspace />
+      </Box>}
     </ThemeProvider>
   )
 }
