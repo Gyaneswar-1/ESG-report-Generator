@@ -1,21 +1,158 @@
 // use prisma-8
+// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String?
-  name      String?
-  posts     Post[]
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+model EsgEntities {
+  id               BigInt          @id(map: "esg_entities_pkey") @default(autoincrement())
+  name             String
+  level            String
+  parentId         BigInt?         @map("parent_id")
+  region           String          @default("")
+  esgRecords       EsgRecords[]
+  esgUserScopes    EsgUserScopes[]
+  parent           EsgEntities?    @relation(name: "esg_entities_parent_id_fkey", fields: [parentId], references: [id], onDelete: Cascade, map: "esg_entities_parent_id_fkey", index: false)
+  esgEntities      EsgEntities[]   @relation(name: "esg_entities_parent_id_fkey")
+  esgForms         EsgForms[]      @relation(name: "esg_forms_site_id_fkey")
+  esgFormsEsgForms EsgForms[]      @relation(name: "esg_forms_subsidiary_id_fkey")
+
+  @@unique([name, parentId], map: "esg_entities_name_parent_id_key")
+  @@check(expression: "(level = ANY (ARRAY['group'::text, 'subsidiary'::text, 'site'::text]))", map: "esg_entities_level_check")
+  @@map("esg_entities")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+model EsgEvidence {
+  id                 BigInt            @id(map: "esg_evidence_pkey") @default(autoincrement())
+  sha256             String            @unique(map: "esg_evidence_sha256_key")
+  fileName           String            @map("file_name")
+  storagePath        String            @map("storage_path")
+  cloudinaryUrl      String            @default("") @map("cloudinary_url")
+  cloudinaryPublicId String            @default("") @map("cloudinary_public_id")
+  mimeType           String            @map("mime_type")
+  byteSize           BigInt            @map("byte_size")
+  createdAt          TimestamptzString @default(now()) @map("created_at")
+  esgRecordAudits    EsgRecordAudit[]
+  esgRecords         EsgRecords[]
+
+  @@map("esg_evidence")
+}
+
+model EsgUsers {
+  id                 BigInt             @id(map: "esg_users_pkey") @default(autoincrement())
+  email              String             @unique(map: "esg_users_email_key")
+  name               String
+  passwordHash       String             @map("password_hash")
+  role               String
+  isProfileCompleted Boolean            @default(false) @map("is_profile_completed")
+  isApproved         Boolean            @default(false) @map("is_approved")
+  approvalStatus     String             @default("pending") @map("approval_status")
+  phone              String             @default("")
+  employeeId         String             @default("") @map("employee_id")
+  department         String             @default("")
+  designation        String             @default("")
+  qualifications     String             @default("")
+  organization       String             @default("")
+  location           String             @default("")
+  reviewedBy         BigInt?            @map("reviewed_by")
+  reviewNote         String             @default("") @map("review_note")
+  reviewedAt         TimestamptzString? @map("reviewed_at")
+  createdAt          TimestamptzString  @default(now()) @map("created_at")
+  esgForms           EsgForms[]
+  esgUserScopes      EsgUserScopes[]
+  esgUsers           EsgUsers?          @relation(name: "esg_users_reviewed_by_fkey", fields: [reviewedBy], references: [id], map: "esg_users_reviewed_by_fkey", index: false)
+  esgUsersEsgUsers   EsgUsers[]         @relation(name: "esg_users_reviewed_by_fkey")
+
+  @@check(expression: "(approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))", map: "esg_users_approval_status_check")
+  @@check(expression: "(role = ANY (ARRAY['engineer'::text, 'subsidiary_head'::text, 'executive'::text, 'auditor'::text]))", map: "esg_users_role_check")
+  @@map("esg_users")
+}
+
+model EsgForms {
+  id                 BigInt            @id(map: "esg_forms_pkey") @default(autoincrement())
+  subsidiaryId       BigInt?           @map("subsidiary_id")
+  siteId             BigInt?           @map("site_id")
+  siteName           String            @default("All Assigned Sites") @map("site_name")
+  title              String
+  description        String            @default("")
+  pillar             String
+  metricCode         String            @map("metric_code")
+  defaultUnit        String            @map("default_unit")
+  allowedUnits       String[]          @default([]) @noCheck(elementNotNull) @map("allowed_units")
+  requiresFileUpload Boolean           @default(true) @map("requires_file_upload")
+  fileInstruction    String            @default("Upload bill or evidence (PDF/Image)") @map("file_instruction")
+  isActive           Boolean           @default(true) @map("is_active")
+  createdBy          BigInt?           @map("created_by")
+  createdAt          TimestamptzString @default(now()) @map("created_at")
+  esgRecords         EsgRecords[]
+  esgUsers           EsgUsers?         @relation(fields: [createdBy], references: [id], onDelete: SetNull, map: "esg_forms_created_by_fkey", index: false)
+  site               EsgEntities?      @relation(name: "esg_forms_site_id_fkey", fields: [siteId], references: [id], onDelete: SetNull, map: "esg_forms_site_id_fkey", index: false)
+  subsidiary         EsgEntities?      @relation(name: "esg_forms_subsidiary_id_fkey", fields: [subsidiaryId], references: [id], onDelete: SetNull, map: "esg_forms_subsidiary_id_fkey", index: false)
+
+  @@check(expression: "(pillar = ANY (ARRAY['environmental'::text, 'social'::text, 'governance'::text]))", map: "esg_forms_pillar_check")
+  @@map("esg_forms")
+}
+
+model EsgRecords {
+  id                  BigInt             @id(map: "esg_records_pkey") @default(autoincrement())
+  site                String
+  siteId              BigInt?            @map("site_id")
+  formId              BigInt?            @map("form_id")
+  period              String
+  pillar              String
+  metric              String
+  metricCode          String?            @map("metric_code")
+  value               Numeric
+  unit                String
+  rawValue            Numeric            @map("raw_value")
+  rawUnit             String             @map("raw_unit")
+  formula             String?
+  enteredBy           String             @map("entered_by")
+  role                String
+  evidence            String             @default("")
+  evidenceId          BigInt?            @map("evidence_id")
+  notes               String             @default("")
+  reviewStatus        String             @default("pending") @map("review_status")
+  reviewedBy          String?            @map("reviewed_by")
+  reviewNote          String?            @map("review_note")
+  reviewedAt          TimestamptzString? @map("reviewed_at")
+  createdAt           TimestamptzString  @default(now()) @map("created_at")
+  esgRecordAudits     EsgRecordAudit[]
+  evidenceEsgEvidence EsgEvidence?       @relation(fields: [evidenceId], references: [id], onDelete: SetNull, map: "esg_records_evidence_id_fkey", index: false)
+  form                EsgForms?          @relation(fields: [formId], references: [id], onDelete: SetNull, map: "esg_records_form_id_fkey", index: false)
+  siteEsgEntities     EsgEntities?       @relation(fields: [siteId], references: [id], onDelete: SetNull, map: "esg_records_site_id_fkey", index: false)
+
+  @@index([siteId, period], map: "esg_records_site_period_idx")
+  @@index([siteId, period, metricCode], map: "esg_records_site_period_metric_uq", where: "((site_id IS NOT NULL) AND (metric_code IS NOT NULL))", unique: true)
+  @@check(expression: "(pillar = ANY (ARRAY['environmental'::text, 'social'::text, 'governance'::text]))", map: "esg_records_pillar_check")
+  @@check(expression: "(review_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))", map: "esg_records_review_status_check")
+  @@check(expression: "(role = ANY (ARRAY['engineer'::text, 'subsidiary_head'::text, 'executive'::text, 'auditor'::text]))", map: "esg_records_role_check")
+  @@check(expression: "(value >= (0)::numeric)", map: "esg_records_value_check")
+  @@map("esg_records")
+}
+
+model EsgRecordAudit {
+  id              BigInt            @id(map: "esg_record_audit_pkey") @default(autoincrement())
+  recordId        BigInt            @map("record_id")
+  action          String
+  rawValue        Numeric           @map("raw_value")
+  rawUnit         String            @map("raw_unit")
+  normalizedValue Numeric           @map("normalized_value")
+  normalizedUnit  String            @map("normalized_unit")
+  formula         String?
+  enteredBy       String            @map("entered_by")
+  role            String
+  evidenceId      BigInt?           @map("evidence_id")
+  createdAt       TimestamptzString @default(now()) @map("created_at")
+  evidence        EsgEvidence?      @relation(fields: [evidenceId], references: [id], map: "esg_record_audit_evidence_id_fkey", index: false)
+  record          EsgRecords        @relation(fields: [recordId], references: [id], onDelete: Cascade, map: "esg_record_audit_record_id_fkey", index: false)
+
+  @@map("esg_record_audit")
+}
+
+model EsgUserScopes {
+  userId   BigInt      @map("user_id")
+  entityId BigInt      @map("entity_id")
+  entity   EsgEntities @relation(fields: [entityId], references: [id], onDelete: Cascade, map: "esg_user_scopes_entity_id_fkey", index: false)
+  user     EsgUsers    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "esg_user_scopes_user_id_fkey", index: false)
+
+  @@id([userId, entityId], map: "esg_user_scopes_pkey")
+  @@map("esg_user_scopes")
 }

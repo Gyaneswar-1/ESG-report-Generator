@@ -1,0 +1,58 @@
+info:
+  name: Publish_Form
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{server_base_url}}/forms"
+  headers:
+    - name: Authorization
+      value: "Bearer {{cso_token}}"
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Monthly Solar Generation Audit",
+        "description": "Form for logging monthly solar generation and meter readings",
+        "pillar": "environmental",
+        "metricCode": "SOLAR_GEN_KWH",
+        "defaultUnit": "kWh",
+        "allowedUnits": ["kWh", "MWh"],
+        "requiresFileUpload": false,
+        "fields": [
+          {
+            "id": "f_1",
+            "name": "plant_incharge_email",
+            "label": "Plant In-Charge Email",
+            "type": "email",
+            "required": true
+          },
+          {
+            "id": "f_2",
+            "name": "inverter_reading",
+            "label": "Inverter Reading",
+            "type": "number",
+            "required": true,
+            "min": 0
+          }
+        ]
+      }
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.data.metricCode
+      operator: eq
+      value: "SOLAR_GEN_KWH"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,5 +1,17 @@
 name: server base url
 variables:
   - name: server_base_url
-    value: http://localhost:3000/api/v1
-    description: ""
+    value: http://localhost:5000/api/v1
+    description: "API Base URL"
+  - name: cso_email
+    value: s.r.sahoo370@gmail.com
+    description: "CSO / Super Admin Bootstrap Email"
+  - name: cso_password
+    value: YourStrongPassword123!
+    description: "CSO / Super Admin Bootstrap Password"
+  - name: cso_token
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzLnIuc2Fob28zNzBAZ21haWwuY29tIiwibmFtZSI6IkNTTyAvIFN1cGVyIEFkbWluIiwicm9sZSI6ImV4ZWN1dGl2ZSIsImlzQXBwcm92ZWQiOnRydWUsImlzUHJvZmlsZUNvbXBsZXRlZCI6dHJ1ZSwiYXBwcm92YWxTdGF0dXMiOiJhcHByb3ZlZCIsImlhdCI6MTc5MTU3MTA5NywiZXhwIjoxNzk0MTYzMDk3fQ.7YVJzKKHXBTz3Jhj6c8Nx5NFTSzR_-TY4rFkwfddPwc
+    description: "Pre-generated valid JWT for CSO/Super Admin"
+  - name: engineer_token
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJwcml5YW5rYS5tb2hhbnR5QG1laWx3YXRlci5jb20iLCJuYW1lIjoiUHJpeWFua2EgTW9oYW50eSIsInJvbGUiOiJlbmdpbmVlciIsImlzQXBwcm92ZWQiOnRydWUsImlzUHJvZmlsZUNvbXBsZXRlZCI6dHJ1ZSwiYXBwcm92YWxTdGF0dXMiOiJhcHByb3ZlZCIsImlhdCI6MTc5MTU3MTA5NywiZXhwIjoxNzk0MTYzMDk3fQ.TrhKTdiK8bm15wm9uCg2P88ofo94jcpDIpyyhHFhDdk
+    description: "Pre-generated valid JWT for Plant Engineer"

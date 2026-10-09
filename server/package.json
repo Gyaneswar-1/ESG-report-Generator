@@ -10,6 +10,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "tsc --noEmit",
+    "seed": "tsx src/db/seed.ts",
     "contract:emit": "prisma contract emit",
     "postinstall": "prisma skills sync || exit 0"
   },
@@ -22,6 +23,7 @@
     "@prisma/client": "^7.10.0",
     "@prisma/orm-postgres": "^8.0.0-rc.16",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^18.0.6",

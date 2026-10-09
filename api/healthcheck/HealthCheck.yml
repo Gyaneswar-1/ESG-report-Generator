@@ -8,6 +8,15 @@ http:
   url: "{{server_base_url}}/health-check"
   auth: inherit
 
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.data.status
+      operator: eq
+      value: "ok"
+
 settings:
   encodeUrl: true
   timeout: 0

@@ -4,12 +4,32 @@
   "target": "postgres",
   "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
   "roots": {
-    "Post": {
-      "model": "Post",
+    "esg_entities": {
+      "model": "EsgEntities",
       "namespace": "public"
     },
-    "User": {
-      "model": "User",
+    "esg_evidence": {
+      "model": "EsgEvidence",
+      "namespace": "public"
+    },
+    "esg_forms": {
+      "model": "EsgForms",
+      "namespace": "public"
+    },
+    "esg_record_audit": {
+      "model": "EsgRecordAudit",
+      "namespace": "public"
+    },
+    "esg_records": {
+      "model": "EsgRecords",
+      "namespace": "public"
+    },
+    "esg_user_scopes": {
+      "model": "EsgUserScopes",
+      "namespace": "public"
+    },
+    "esg_users": {
+      "model": "EsgUsers",
       "namespace": "public"
     }
   },
@@ -17,17 +37,177 @@
     "namespaces": {
       "public": {
         "models": {
-          "Post": {
+          "EsgEntities": {
             "fields": {
-              "authorId": {
+              "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/int8@1",
                   "kind": "scalar"
                 }
               },
-              "content": {
+              "level": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "parentId": {
                 "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "region": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "esgEntities": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "parentId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEntities",
+                  "namespace": "public"
+                }
+              },
+              "esgForms": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "siteId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgForms",
+                  "namespace": "public"
+                }
+              },
+              "esgFormsEsgForms": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "subsidiaryId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgForms",
+                  "namespace": "public"
+                }
+              },
+              "esgRecords": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "siteId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgRecords",
+                  "namespace": "public"
+                }
+              },
+              "esgUserScopes": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "entityId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgUserScopes",
+                  "namespace": "public"
+                }
+              },
+              "parent": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "parentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEntities",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "level": {
+                  "column": "level"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "parentId": {
+                  "column": "parent_id"
+                },
+                "region": {
+                  "column": "region"
+                }
+              },
+              "namespaceId": "public",
+              "table": "esg_entities"
+            }
+          },
+          "EsgEvidence": {
+            "fields": {
+              "byteSize": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "cloudinaryPublicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "cloudinaryUrl": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -40,10 +220,208 @@
                   "kind": "scalar"
                 }
               },
+              "fileName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "mimeType": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "sha256": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "storagePath": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "esgRecordAudits": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "evidenceId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgRecordAudit",
+                  "namespace": "public"
+                }
+              },
+              "esgRecords": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "evidenceId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgRecords",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "byteSize": {
+                  "column": "byte_size"
+                },
+                "cloudinaryPublicId": {
+                  "column": "cloudinary_public_id"
+                },
+                "cloudinaryUrl": {
+                  "column": "cloudinary_url"
+                },
+                "createdAt": {
+                  "column": "created_at"
+                },
+                "fileName": {
+                  "column": "file_name"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "mimeType": {
+                  "column": "mime_type"
+                },
+                "sha256": {
+                  "column": "sha256"
+                },
+                "storagePath": {
+                  "column": "storage_path"
+                }
+              },
+              "namespaceId": "public",
+              "table": "esg_evidence"
+            }
+          },
+          "EsgForms": {
+            "fields": {
+              "allowedUnits": {
+                "many": {
+                  "elementNullable": false
+                },
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdBy": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "defaultUnit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "description": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "fileInstruction": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "isActive": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "metricCode": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "pillar": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "requiresFileUpload": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "siteId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "siteName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "subsidiaryId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
                   "kind": "scalar"
                 }
               },
@@ -53,64 +431,685 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
-              },
-              "updatedAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
               }
             },
             "relations": {
-              "author": {
-                "cardinality": "N:1",
-                "nullable": false,
+              "esgRecords": {
+                "cardinality": "1:N",
                 "on": {
                   "localFields": [
-                    "authorId"
+                    "id"
+                  ],
+                  "targetFields": [
+                    "formId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgRecords",
+                  "namespace": "public"
+                }
+              },
+              "esgUsers": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "createdBy"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "EsgUsers",
+                  "namespace": "public"
+                }
+              },
+              "site": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "siteId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEntities",
+                  "namespace": "public"
+                }
+              },
+              "subsidiary": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "subsidiaryId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEntities",
                   "namespace": "public"
                 }
               }
             },
             "storage": {
               "fields": {
-                "authorId": {
-                  "column": "authorId"
-                },
-                "content": {
-                  "column": "content"
+                "allowedUnits": {
+                  "column": "allowed_units"
                 },
                 "createdAt": {
-                  "column": "createdAt"
+                  "column": "created_at"
+                },
+                "createdBy": {
+                  "column": "created_by"
+                },
+                "defaultUnit": {
+                  "column": "default_unit"
+                },
+                "description": {
+                  "column": "description"
+                },
+                "fileInstruction": {
+                  "column": "file_instruction"
                 },
                 "id": {
                   "column": "id"
                 },
+                "isActive": {
+                  "column": "is_active"
+                },
+                "metricCode": {
+                  "column": "metric_code"
+                },
+                "pillar": {
+                  "column": "pillar"
+                },
+                "requiresFileUpload": {
+                  "column": "requires_file_upload"
+                },
+                "siteId": {
+                  "column": "site_id"
+                },
+                "siteName": {
+                  "column": "site_name"
+                },
+                "subsidiaryId": {
+                  "column": "subsidiary_id"
+                },
                 "title": {
                   "column": "title"
-                },
-                "updatedAt": {
-                  "column": "updatedAt"
                 }
               },
               "namespaceId": "public",
-              "table": "Post"
+              "table": "esg_forms"
             }
           },
-          "User": {
+          "EsgRecordAudit": {
+            "fields": {
+              "action": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "enteredBy": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "evidenceId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "formula": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "normalizedUnit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "normalizedValue": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "rawUnit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "rawValue": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "recordId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "evidence": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "evidenceId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEvidence",
+                  "namespace": "public"
+                }
+              },
+              "record": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "recordId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgRecords",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "action": {
+                  "column": "action"
+                },
+                "createdAt": {
+                  "column": "created_at"
+                },
+                "enteredBy": {
+                  "column": "entered_by"
+                },
+                "evidenceId": {
+                  "column": "evidence_id"
+                },
+                "formula": {
+                  "column": "formula"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "normalizedUnit": {
+                  "column": "normalized_unit"
+                },
+                "normalizedValue": {
+                  "column": "normalized_value"
+                },
+                "rawUnit": {
+                  "column": "raw_unit"
+                },
+                "rawValue": {
+                  "column": "raw_value"
+                },
+                "recordId": {
+                  "column": "record_id"
+                },
+                "role": {
+                  "column": "role"
+                }
+              },
+              "namespaceId": "public",
+              "table": "esg_record_audit"
+            }
+          },
+          "EsgRecords": {
             "fields": {
               "createdAt": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "enteredBy": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "evidence": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "evidenceId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "formId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "formula": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "metric": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "metricCode": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "notes": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "period": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "pillar": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "rawUnit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "rawValue": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewNote": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewStatus": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewedBy": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "site": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "siteId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "unit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "value": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "esgRecordAudits": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "recordId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgRecordAudit",
+                  "namespace": "public"
+                }
+              },
+              "evidenceEsgEvidence": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "evidenceId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEvidence",
+                  "namespace": "public"
+                }
+              },
+              "form": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "formId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgForms",
+                  "namespace": "public"
+                }
+              },
+              "siteEsgEntities": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "siteId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEntities",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "created_at"
+                },
+                "enteredBy": {
+                  "column": "entered_by"
+                },
+                "evidence": {
+                  "column": "evidence"
+                },
+                "evidenceId": {
+                  "column": "evidence_id"
+                },
+                "formId": {
+                  "column": "form_id"
+                },
+                "formula": {
+                  "column": "formula"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "metric": {
+                  "column": "metric"
+                },
+                "metricCode": {
+                  "column": "metric_code"
+                },
+                "notes": {
+                  "column": "notes"
+                },
+                "period": {
+                  "column": "period"
+                },
+                "pillar": {
+                  "column": "pillar"
+                },
+                "rawUnit": {
+                  "column": "raw_unit"
+                },
+                "rawValue": {
+                  "column": "raw_value"
+                },
+                "reviewNote": {
+                  "column": "review_note"
+                },
+                "reviewStatus": {
+                  "column": "review_status"
+                },
+                "reviewedAt": {
+                  "column": "reviewed_at"
+                },
+                "reviewedBy": {
+                  "column": "reviewed_by"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "site": {
+                  "column": "site"
+                },
+                "siteId": {
+                  "column": "site_id"
+                },
+                "unit": {
+                  "column": "unit"
+                },
+                "value": {
+                  "column": "value"
+                }
+              },
+              "namespaceId": "public",
+              "table": "esg_records"
+            }
+          },
+          "EsgUserScopes": {
+            "fields": {
+              "entityId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "entity": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "entityId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgEntities",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgUsers",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "entityId": {
+                  "column": "entity_id"
+                },
+                "userId": {
+                  "column": "user_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "esg_user_scopes"
+            }
+          },
+          "EsgUsers": {
+            "fields": {
+              "approvalStatus": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "department": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "designation": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -121,29 +1120,99 @@
                   "kind": "scalar"
                 }
               },
-              "id": {
+              "employeeId": {
                 "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "name": {
-                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
-              "updatedAt": {
+              "id": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "isApproved": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "isProfileCompleted": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "location": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organization": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "passwordHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "phone": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "qualifications": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewNote": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewedAt": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
-              "username": {
+              "reviewedBy": {
                 "nullable": true,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -151,45 +1220,130 @@
               }
             },
             "relations": {
-              "posts": {
+              "esgForms": {
                 "cardinality": "1:N",
                 "on": {
                   "localFields": [
                     "id"
                   ],
                   "targetFields": [
-                    "authorId"
+                    "createdBy"
                   ]
                 },
                 "to": {
-                  "model": "Post",
+                  "model": "EsgForms",
+                  "namespace": "public"
+                }
+              },
+              "esgUserScopes": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "EsgUserScopes",
+                  "namespace": "public"
+                }
+              },
+              "esgUsers": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "reviewedBy"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "EsgUsers",
+                  "namespace": "public"
+                }
+              },
+              "esgUsersEsgUsers": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "reviewedBy"
+                  ]
+                },
+                "to": {
+                  "model": "EsgUsers",
                   "namespace": "public"
                 }
               }
             },
             "storage": {
               "fields": {
+                "approvalStatus": {
+                  "column": "approval_status"
+                },
                 "createdAt": {
-                  "column": "createdAt"
+                  "column": "created_at"
+                },
+                "department": {
+                  "column": "department"
+                },
+                "designation": {
+                  "column": "designation"
                 },
                 "email": {
                   "column": "email"
                 },
+                "employeeId": {
+                  "column": "employee_id"
+                },
                 "id": {
                   "column": "id"
+                },
+                "isApproved": {
+                  "column": "is_approved"
+                },
+                "isProfileCompleted": {
+                  "column": "is_profile_completed"
+                },
+                "location": {
+                  "column": "location"
                 },
                 "name": {
                   "column": "name"
                 },
-                "updatedAt": {
-                  "column": "updatedAt"
+                "organization": {
+                  "column": "organization"
                 },
-                "username": {
-                  "column": "username"
+                "passwordHash": {
+                  "column": "password_hash"
+                },
+                "phone": {
+                  "column": "phone"
+                },
+                "qualifications": {
+                  "column": "qualifications"
+                },
+                "reviewNote": {
+                  "column": "review_note"
+                },
+                "reviewedAt": {
+                  "column": "reviewed_at"
+                },
+                "reviewedBy": {
+                  "column": "reviewed_by"
+                },
+                "role": {
+                  "column": "role"
                 }
               },
               "namespaceId": "public",
-              "table": "User"
+              "table": "esg_users"
             }
           }
         }
@@ -201,90 +1355,816 @@
       "public": {
         "entries": {
           "table": {
-            "Post": {
+            "esg_entities": {
+              "checks": [
+                {
+                  "expression": "(level = ANY (ARRAY['group'::text, 'subsidiary'::text, 'site'::text]))",
+                  "name": "esg_entities_level_check"
+                }
+              ],
               "columns": {
-                "authorId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "nullable": false
-                },
-                "content": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": true
-                },
-                "createdAt": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "dataType": "pg/timestamptz",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
-                  "nullable": false
-                },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
                   "default": {
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
                   "nullable": false
                 },
-                "title": {
+                "level": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "dataType": "pg/timestamptz",
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "parent_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "region": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
                   "nullable": false
                 }
               },
               "foreignKeys": [
                 {
+                  "name": "esg_entities_parent_id_fkey",
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "authorId"
+                      "parent_id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "Post"
+                    "tableName": "esg_entities"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "User"
+                    "tableName": "esg_entities"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "esg_entities_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "name",
+                    "parent_id"
+                  ],
+                  "name": "esg_entities_name_parent_id_key"
+                }
+              ]
+            },
+            "esg_evidence": {
+              "columns": {
+                "byte_size": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": false
+                },
+                "cloudinary_public_id": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "cloudinary_url": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "file_name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "mime_type": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "sha256": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "storage_path": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "esg_evidence_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "sha256"
+                  ],
+                  "name": "esg_evidence_sha256_key"
+                }
+              ]
+            },
+            "esg_forms": {
+              "checks": [
+                {
+                  "expression": "(pillar = ANY (ARRAY['environmental'::text, 'social'::text, 'governance'::text]))",
+                  "name": "esg_forms_pillar_check"
+                }
+              ],
+              "columns": {
+                "allowed_units": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": []
+                  },
+                  "many": {
+                    "elementNullable": false
+                  },
+                  "noCheck": [
+                    "elementNotNull"
+                  ],
+                  "nullable": false
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "created_by": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "default_unit": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "description": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "file_instruction": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "Upload bill or evidence (PDF/Image)"
+                  },
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "is_active": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nullable": false
+                },
+                "metric_code": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "pillar": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "requires_file_upload": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nullable": false
+                },
+                "site_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "site_name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "All Assigned Sites"
+                  },
+                  "nullable": false
+                },
+                "subsidiary_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "title": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "esg_forms_created_by_fkey",
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "created_by"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_forms"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_users"
+                  }
+                },
+                {
+                  "name": "esg_forms_site_id_fkey",
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "site_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_forms"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_entities"
+                  }
+                },
+                {
+                  "name": "esg_forms_subsidiary_id_fkey",
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "subsidiary_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_forms"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_entities"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "esg_forms_pkey"
+              },
+              "uniques": []
+            },
+            "esg_record_audit": {
+              "columns": {
+                "action": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "entered_by": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "evidence_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "formula": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "normalized_unit": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "normalized_value": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "raw_unit": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "raw_value": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "record_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": false
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "esg_record_audit_evidence_id_fkey",
+                  "source": {
+                    "columns": [
+                      "evidence_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_record_audit"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_evidence"
+                  }
+                },
+                {
+                  "name": "esg_record_audit_record_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "record_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_record_audit"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_records"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "esg_record_audit_pkey"
+              },
+              "uniques": []
+            },
+            "esg_records": {
+              "checks": [
+                {
+                  "expression": "(pillar = ANY (ARRAY['environmental'::text, 'social'::text, 'governance'::text]))",
+                  "name": "esg_records_pillar_check"
+                },
+                {
+                  "expression": "(review_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))",
+                  "name": "esg_records_review_status_check"
+                },
+                {
+                  "expression": "(role = ANY (ARRAY['engineer'::text, 'subsidiary_head'::text, 'executive'::text, 'auditor'::text]))",
+                  "name": "esg_records_role_check"
+                },
+                {
+                  "expression": "(value >= (0)::numeric)",
+                  "name": "esg_records_value_check"
+                }
+              ],
+              "columns": {
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "entered_by": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "evidence": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "evidence_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "form_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "formula": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "metric": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "metric_code": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "notes": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "period": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "pillar": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "raw_unit": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "raw_value": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "review_note": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "review_status": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "pending"
+                  },
+                  "nullable": false
+                },
+                "reviewed_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": true
+                },
+                "reviewed_by": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "site": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "site_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "unit": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "value": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "esg_records_evidence_id_fkey",
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "evidence_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_records"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_evidence"
+                  }
+                },
+                {
+                  "name": "esg_records_form_id_fkey",
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "form_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_records"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_forms"
+                  }
+                },
+                {
+                  "name": "esg_records_site_id_fkey",
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "site_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_records"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_entities"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "authorId"
+                    "site_id",
+                    "period"
                   ],
-                  "name": "Post_authorId_idx_e47547ed",
-                  "prefix": "Post_authorId_idx",
+                  "name": "esg_records_site_period_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "site_id",
+                    "period",
+                    "metric_code"
+                  ],
+                  "name": "esg_records_site_period_metric_uq",
+                  "unique": true,
+                  "where": "((site_id IS NOT NULL) AND (metric_code IS NOT NULL))"
                 }
               ],
               "primaryKey": {
                 "columns": [
                   "id"
-                ]
+                ],
+                "name": "esg_records_pkey"
               },
               "uniques": []
             },
-            "User": {
+            "esg_user_scopes": {
               "columns": {
-                "createdAt": {
+                "entity_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": false
+                },
+                "user_id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "esg_user_scopes_entity_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "entity_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_user_scopes"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_entities"
+                  }
+                },
+                {
+                  "name": "esg_user_scopes_user_id_fkey",
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "user_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_user_scopes"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_users"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "user_id",
+                  "entity_id"
+                ],
+                "name": "esg_user_scopes_pkey"
+              },
+              "uniques": []
+            },
+            "esg_users": {
+              "checks": [
+                {
+                  "expression": "(approval_status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))",
+                  "name": "esg_users_approval_status_check"
+                },
+                {
+                  "expression": "(role = ANY (ARRAY['engineer'::text, 'subsidiary_head'::text, 'executive'::text, 'auditor'::text]))",
+                  "name": "esg_users_role_check"
+                }
+              ],
+              "columns": {
+                "approval_status": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "pending"
+                  },
+                  "nullable": false
+                },
+                "created_at": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
                   "default": {
                     "expression": "now()",
                     "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "department": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "designation": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
                   },
                   "nullable": false
                 },
@@ -293,43 +2173,145 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "employee_id": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
                   "default": {
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
                   "nullable": false
                 },
+                "is_approved": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
+                "is_profile_completed": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
+                "location": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
                 "name": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
-                  "nullable": true
-                },
-                "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "dataType": "pg/timestamptz",
                   "nullable": false
                 },
-                "username": {
+                "organization": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "password_hash": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "phone": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "qualifications": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "review_note": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": ""
+                  },
+                  "nullable": false
+                },
+                "reviewed_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
                   "nullable": true
+                },
+                "reviewed_by": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "nullable": true
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
                 }
               },
-              "foreignKeys": [],
+              "foreignKeys": [
+                {
+                  "name": "esg_users_reviewed_by_fkey",
+                  "source": {
+                    "columns": [
+                      "reviewed_by"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_users"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "esg_users"
+                  }
+                }
+              ],
               "indexes": [],
               "primaryKey": {
                 "columns": [
                   "id"
-                ]
+                ],
+                "name": "esg_users_pkey"
               },
               "uniques": [
                 {
                   "columns": [
                     "email"
-                  ]
+                  ],
+                  "name": "esg_users_email_key"
                 }
               ]
             }
@@ -339,44 +2321,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "797cfed44e9c40efbc00a689b87c92c44cd4b60e1ae3d6ffbc0304d8f348aaf5"
-  },
-  "execution": {
-    "executionHash": "4e88564095b5e0ba7904ffdba3c563ef916d87688c8c483c67055f71a9194f0f",
-    "mutations": {
-      "defaults": [
-        {
-          "onCreate": {
-            "id": "timestampNow",
-            "kind": "generator"
-          },
-          "onUpdate": {
-            "id": "timestampNow",
-            "kind": "generator"
-          },
-          "ref": {
-            "entry": "Post",
-            "field": "updatedAt",
-            "namespace": "public"
-          }
-        },
-        {
-          "onCreate": {
-            "id": "timestampNow",
-            "kind": "generator"
-          },
-          "onUpdate": {
-            "id": "timestampNow",
-            "kind": "generator"
-          },
-          "ref": {
-            "entry": "User",
-            "field": "updatedAt",
-            "namespace": "public"
-          }
-        }
-      ]
-    }
+    "storageHash": "e5c3f553cd90e660100acb65ee05a202c1fac13228236b90b4c4e82c5d3acce8"
   },
   "capabilities": {
     "postgres": {

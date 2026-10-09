@@ -1,25 +1,30 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { UserRole } from './authSlice'
+import type { FormField, BrsrFullDossier } from '@my-app/common'
+import type { UserProfile, UserRole } from './authSlice'
 
 export interface EsgRecord {
   id: string
   site: string
   siteId: number
+  formId?: number | null
   period: string
   pillar: 'environmental' | 'social' | 'governance'
   metric: string
-  value: number
-  unit: string
-  rawValue: number
-  rawUnit: string
+  metricCode?: string
+  value: number // Normalized SEBI value
+  unit: string // Normalized SEBI unit
+  rawValue: number // Raw value uploaded by site engineer
+  rawUnit: string // Raw unit uploaded by site engineer
   formula: string | null
   enteredBy: string
   role: string
   evidence: string
   notes: string
+  customData?: Record<string, any> | null
   evidenceId: number
   evidenceHash: string
   evidenceName: string
+  cloudinaryUrl?: string
   reviewStatus: 'pending' | 'approved' | 'rejected'
   reviewedBy?: string | null
   reviewNote?: string | null
@@ -27,12 +32,99 @@ export interface EsgRecord {
   createdAt: string
 }
 
-export interface Site { id: number; name: string; region: string; subsidiary: string; subsidiaryId: number; group: string }
-export interface MetricTotal { metricCode: string; metric: string; unit: string; total: number; siteCount: number; period: string }
-export interface AuditEvent { id: string; action: string; rawValue: number; rawUnit: string; normalizedValue: number; normalizedUnit: string; formula: string | null; enteredBy: string; role: string; createdAt: string; evidenceId: number; evidenceHash: string; evidenceName: string }
-export interface AuthSession { token: string; user: { id: number; email: string; name: string; role: UserRole } }
-export interface PublicSite { id: number; name: string; region: string }
-export interface SignupRequest { id: string; name: string; email: string; role: 'engineer'; createdAt: string; sites: PublicSite[] }
+export interface Site {
+  id: number
+  name: string
+  region: string
+  subsidiary: string
+  subsidiaryId: number
+  group: string
+}
+
+export interface MetricTotal {
+  metricCode: string
+  metric: string
+  unit: string
+  total: number
+  siteCount: number
+  period: string
+}
+
+export interface AuditEvent {
+  id: string
+  action: string
+  rawValue: number
+  rawUnit: string
+  normalizedValue: number
+  normalizedUnit: string
+  formula: string | null
+  enteredBy: string
+  role: string
+  createdAt: string
+  evidenceId: number
+  evidenceHash: string
+  evidenceName: string
+  cloudinaryUrl?: string
+}
+
+export interface AuthSession {
+  token: string
+  user: UserProfile
+}
+
+export interface PublicSite {
+  id: number
+  name: string
+  region: string
+  subsidiary?: string
+}
+
+export interface PublicSubsidiary {
+  id: number
+  name: string
+  region: string
+}
+
+export interface PendingApprovalUser {
+  id: number
+  name: string
+  email: string
+  role: UserRole
+  phone: string
+  employeeId: string
+  department: string
+  designation: string
+  qualifications: string
+  location: string
+  organization: string
+  approvalStatus: 'pending' | 'approved' | 'rejected'
+  isApproved?: boolean
+  isProfileCompleted?: boolean
+  reviewNote?: string
+  reviewedAt?: string | null
+  createdAt: string
+  sites?: { id: number; name: string; region: string }[]
+  scopes?: { id: number; name: string; region: string; level: string }[]
+}
+
+export interface PublishedForm {
+  id: string | number
+  title: string
+  description: string
+  fields?: FormField[]
+  pillar: 'environmental' | 'social' | 'governance'
+  metricCode: string
+  defaultUnit: string
+  allowedUnits: string[]
+  requiresFileUpload: boolean
+  fileInstruction: string
+  siteId?: number | null
+  siteName: string
+  subsidiaryId?: number | null
+  isActive: boolean
+  createdAt: string
+  createdByName?: string
+}
 
 export const api = createApi({
   reducerPath: 'api',
@@ -44,31 +136,185 @@ export const api = createApi({
       return headers
     },
   }),
+  tagTypes: ['Records', 'Sites', 'Forms', 'PendingApprovals', 'CurrentUser'],
   endpoints: (build) => ({
-    login: build.mutation<{ data: AuthSession }, { email: string; password: string; role: UserRole }>({ query: (body) => ({ url: 'auth/login', method: 'POST', body }) }),
-    getPublicSites: build.query<{ data: PublicSite[] }, void>({ query: () => 'auth/public/sites' }),
-    signup: build.mutation<{ message: string }, { name: string; email: string; password: string; role: 'engineer'; siteIds: number[] }>({ query: (body) => ({ url: 'auth/signup', method: 'POST', body }) }),
-    getSignupRequests: build.query<{ data: SignupRequest[] }, void>({ query: () => 'auth/requests', providesTags: ['SignupRequests'] }),
-    reviewSignup: build.mutation<{ message: string }, { id: string; decision: 'approve' | 'reject' }>({ query: ({ id, ...body }) => ({ url: `auth/requests/${id}`, method: 'PATCH', body }), invalidatesTags: ['SignupRequests'] }),
-    getCurrentUser: build.query<{ data: AuthSession['user'] }, void>({ query: () => 'auth/me' }),
-    createUser: build.mutation<{ data: { id: number; email: string; name: string; role: UserRole } }, { email: string; password: string; name: string; role: UserRole; entityIds: number[] }>({ query: (body) => ({ url: 'auth/users', method: 'POST', body }) }),
-    reviewRecord: build.mutation<{ data: { id: string; reviewStatus: string } }, { id: string; status: 'approved' | 'rejected'; note: string }>({
-      query: ({ id, ...body }) => ({ url: `records/${id}/review`, method: 'PATCH', body }), invalidatesTags: ['Records'],
+    // Auth & Profile
+    login: build.mutation<{ data: AuthSession }, { email: string; password: string; role: UserRole }>({
+      query: (body) => ({ url: 'auth/login', method: 'POST', body }),
+      invalidatesTags: ['CurrentUser'],
     }),
-    getHealth: build.query<{ status?: string; message?: string }, void>({ query: () => 'health-check' }),
-    getRecords: build.query<{ data: EsgRecord[] }, void>({ query: () => 'records', providesTags: ['Records'] }),
-    getRecordAudit: build.query<{ data: AuditEvent[] }, string>({ query: (id) => `records/${id}/audit`, providesTags: ['Records'] }),
-    getSites: build.query<{ data: Site[] }, void>({ query: () => 'sites', providesTags: ['Sites'] }),
-    createSite: build.mutation<{ data: Site }, { group: string; subsidiary: string; site: string; region: string }>({
-      query: (body) => ({ url: 'sites', method: 'POST', body }), invalidatesTags: ['Sites'],
+
+    signup: build.mutation<
+      { message: string; data: AuthSession },
+      {
+        name: string
+        email: string
+        password: string
+        role: UserRole
+        siteIds?: number[]
+        subsidiaryIds?: number[]
+      }
+    >({
+      query: (body) => ({ url: 'auth/signup', method: 'POST', body }),
+      invalidatesTags: ['CurrentUser'],
     }),
-    getMetrics: build.query<{ data: MetricTotal[] }, string | void>({ query: (region) => `metrics${region ? `?region=${encodeURIComponent(region)}` : ''}` }),
+
+    getCurrentUser: build.query<{ data: UserProfile }, void>({
+      query: () => 'auth/me',
+      providesTags: ['CurrentUser'],
+    }),
+
+    completeProfile: build.mutation<
+      { message: string; data: AuthSession },
+      {
+        phone: string
+        employeeId: string
+        department: string
+        designation: string
+        qualifications?: string
+        organization?: string
+        location?: string
+        siteIds?: number[]
+        subsidiaryIds?: number[]
+      }
+    >({
+      query: (body) => ({ url: 'auth/profile', method: 'PATCH', body }),
+      invalidatesTags: ['CurrentUser', 'PendingApprovals', 'Sites'],
+    }),
+
+    // Multi-tier Approvals
+    getPendingApprovals: build.query<{ data: PendingApprovalUser[] }, void>({
+      query: () => 'auth/pending-approvals',
+      providesTags: ['PendingApprovals'],
+    }),
+
+    decideApproval: build.mutation<
+      { message: string; data: { id: number; approvalStatus: string; isApproved: boolean } },
+      { id: number | string; decision: 'approve' | 'reject' | 'pending'; note?: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `auth/approvals/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['PendingApprovals', 'CurrentUser'],
+    }),
+
+    // Public scopes for registration
+    getPublicSites: build.query<{ data: PublicSite[] }, void>({
+      query: () => 'auth/public/sites',
+    }),
+
+    getPublicSubsidiaries: build.query<{ data: PublicSubsidiary[] }, void>({
+      query: () => 'auth/public/subsidiaries',
+    }),
+
+    // Dynamic Forms
+    getForms: build.query<{ data: PublishedForm[] }, void>({
+      query: () => 'forms',
+      providesTags: ['Forms'],
+    }),
+
+    createForm: build.mutation<
+      { message: string; data: PublishedForm },
+      {
+        title: string
+        description?: string
+        pillar: 'environmental' | 'social' | 'governance'
+        metricCode: string
+        defaultUnit: string
+        allowedUnits?: string[]
+        requiresFileUpload?: boolean
+        fileInstruction?: string
+        siteId?: number | null
+        fields?: FormField[]
+      }
+    >({
+      query: (body) => ({ url: 'forms', method: 'POST', body }),
+      invalidatesTags: ['Forms'],
+    }),
+
+    toggleFormStatus: build.mutation<{ message: string; data: { id: string; isActive: boolean } }, { id: string; isActive: boolean }>({
+      query: ({ id, ...body }) => ({
+        url: `forms/${id}/status`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Forms'],
+    }),
+
+    // ESG Records
+    getRecords: build.query<{ data: EsgRecord[] }, void>({
+      query: () => 'records',
+      providesTags: ['Records'],
+    }),
+
     createRecord: build.mutation<{ data: EsgRecord }, FormData>({
       query: (body) => ({ url: 'records', method: 'POST', body }),
       invalidatesTags: ['Records'],
     }),
+
+    reviewRecord: build.mutation<
+      { data: { id: string; reviewStatus: string } },
+      { id: string; status: 'approved' | 'rejected'; note: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `records/${id}/review`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Records'],
+    }),
+
+    getRecordAudit: build.query<{ data: AuditEvent[] }, string>({
+      query: (id) => `records/${id}/audit`,
+      providesTags: ['Records'],
+    }),
+
+    // Sites & Organization
+    getSites: build.query<{ data: Site[] }, void>({
+      query: () => 'sites',
+      providesTags: ['Sites'],
+    }),
+
+    createSite: build.mutation<
+      { data: Site },
+      { group: string; subsidiary: string; site: string; region: string }
+    >({
+      query: (body) => ({ url: 'sites', method: 'POST', body }),
+      invalidatesTags: ['Sites'],
+    }),
+
+    getMetrics: build.query<{ data: MetricTotal[] }, string | void>({
+      query: (region) => `metrics${region ? `?region=${encodeURIComponent(region)}` : ''}`,
+      providesTags: ['Records'],
+    }),
+
+    getBrsrReport: build.query<{ data: BrsrFullDossier }, void>({
+      query: () => 'reports/brsr/data',
+      providesTags: ['Records', 'Sites'],
+    }),
   }),
-  tagTypes: ['Records', 'Sites', 'SignupRequests'],
 })
 
-export const { useLoginMutation, useGetCurrentUserQuery, useCreateUserMutation, useReviewRecordMutation, useGetRecordsQuery, useGetRecordAuditQuery, useGetSitesQuery, useCreateSiteMutation, useGetMetricsQuery, useCreateRecordMutation, useGetPublicSitesQuery, useSignupMutation, useGetSignupRequestsQuery, useReviewSignupMutation } = api
+export const {
+  useLoginMutation,
+  useSignupMutation,
+  useGetCurrentUserQuery,
+  useCompleteProfileMutation,
+  useGetPendingApprovalsQuery,
+  useDecideApprovalMutation,
+  useGetPublicSitesQuery,
+  useGetPublicSubsidiariesQuery,
+  useGetFormsQuery,
+  useCreateFormMutation,
+  useToggleFormStatusMutation,
+  useGetRecordsQuery,
+  useCreateRecordMutation,
+  useReviewRecordMutation,
+  useGetRecordAuditQuery,
+  useGetSitesQuery,
+  useCreateSiteMutation,
+  useGetMetricsQuery,
+  useGetBrsrReportQuery,
+} = api

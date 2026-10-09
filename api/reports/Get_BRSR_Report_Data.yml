@@ -1,0 +1,30 @@
+info:
+  name: Get_BRSR_Report_Data
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{server_base_url}}/reports/brsr/data"
+  headers:
+    - name: Authorization
+      value: "Bearer {{cso_token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.success
+      operator: eq
+      value: "true"
+    - expression: res.body.data.metadata.cin
+      operator: eq
+      value: "L24100MH2001PLC132904"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
