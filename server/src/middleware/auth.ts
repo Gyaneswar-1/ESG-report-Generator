@@ -2,7 +2,7 @@ import type { Request, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
 
-export type AppRole = 'engineer' | 'hse' | 'subsidiary_head' | 'executive' | 'auditor';
+export type AppRole = 'engineer' | 'subsidiary_head' | 'executive' | 'auditor';
 export interface AuthUser { id: number; email: string; name: string; role: AppRole }
 declare global { namespace Express { interface Request { user?: AuthUser } } }
 
@@ -14,6 +14,7 @@ export const requireAuth: RequestHandler = (req, res, next) => {
   if (!token) return res.status(401).json({ message: 'Sign in to continue.' });
   try {
     const claims = jwt.verify(token, secret() ?? '') as AuthUser;
+    if (!['engineer', 'subsidiary_head', 'executive', 'auditor'].includes(claims.role)) return res.status(401).json({ message: 'This account role is no longer supported. Sign in with one of the four portal roles.' });
     req.user = claims;
     next();
   } catch { res.status(401).json({ message: 'Your session has expired. Sign in again.' }); }

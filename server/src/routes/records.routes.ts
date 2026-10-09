@@ -44,7 +44,7 @@ const ensureTables = () => {
       id BIGSERIAL PRIMARY KEY, site TEXT NOT NULL, period CHAR(7) NOT NULL,
       pillar TEXT NOT NULL CHECK (pillar IN ('environmental','social','governance')),
       metric TEXT NOT NULL, value NUMERIC NOT NULL CHECK (value >= 0), unit TEXT NOT NULL,
-      entered_by TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('engineer','hse','executive','auditor')),
+      entered_by TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('engineer','subsidiary_head','executive','auditor')),
       evidence TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
     await pool.query(`ALTER TABLE esg_records
@@ -162,7 +162,7 @@ router.get('/metrics', allowRoles('executive'), async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/records', allowRoles('engineer','hse'), uploadPdf, async (req, res, next) => {
+router.post('/records', allowRoles('engineer'), uploadPdf, async (req, res, next) => {
   const parsed = recordSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: 'Please check the required fields.', errors: parsed.error.flatten().fieldErrors });
   if (!req.file) return res.status(400).json({ message: 'Attach a PDF evidence file before saving this measurement.' });

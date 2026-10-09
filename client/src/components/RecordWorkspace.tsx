@@ -43,7 +43,7 @@ export function RecordWorkspace() {
   const [createSiteOpen, setCreateSiteOpen] = useState(false)
   const [siteForm, setSiteForm] = useState({ group: '', subsidiary: '', site: '', region: '' })
   const [userOpen, setUserOpen] = useState(false)
-  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'engineer' as UserRole, entityIds: [] as number[] })
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'subsidiary_head' as UserRole, entityIds: [] as number[] })
 
   const update = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, [field]: event.target.value }))
   const setMetric = (code: string) => {
@@ -85,16 +85,16 @@ export function RecordWorkspace() {
   }
 
   const activeMetrics = metricData?.data ?? []
-  const canEnter = role === 'engineer' || role === 'hse'
+  const canEnter = role === 'engineer'
   const availableScopeIds = userForm.role === 'subsidiary_head'
     ? [...new Map(sites.map((site) => [site.subsidiaryId, { id: site.subsidiaryId, name: site.subsidiary }])).values()]
     : sites.map((site) => ({ id: site.id, name: `${site.name} · ${site.region}` }))
 
   const submitUser = async () => {
     try {
-      await createUser({ ...userForm, entityIds: ['executive', 'auditor'].includes(userForm.role) ? [] : userForm.entityIds }).unwrap()
+      await createUser({ ...userForm, entityIds: userForm.role === 'auditor' ? [] : userForm.entityIds }).unwrap()
       setUserOpen(false)
-      setUserForm({ name: '', email: '', password: '', role: 'engineer', entityIds: [] })
+      setUserForm({ name: '', email: '', password: '', role: 'subsidiary_head', entityIds: [] })
     } catch { /* show the mutation error in the dialog */ }
   }
 
@@ -207,15 +207,15 @@ export function RecordWorkspace() {
           <TextField required type="email" label="Work email" value={userForm.email} onChange={(event) => setUserForm((current) => ({ ...current, email: event.target.value }))} />
           <TextField required type="password" label="Temporary password (12+ characters)" value={userForm.password} onChange={(event) => setUserForm((current) => ({ ...current, password: event.target.value }))} />
           <TextField select label="Role" value={userForm.role} onChange={(event) => setUserForm((current) => ({ ...current, role: event.target.value as UserRole, entityIds: [] }))}>
-            <MenuItem value="engineer">Site Engineer</MenuItem><MenuItem value="hse">HSE Officer</MenuItem><MenuItem value="subsidiary_head">Subsidiary Head</MenuItem><MenuItem value="executive">CSO / Executive</MenuItem><MenuItem value="auditor">Statutory Auditor</MenuItem>
+            <MenuItem value="subsidiary_head">Subsidiary Head</MenuItem><MenuItem value="auditor">Independent Auditor</MenuItem>
           </TextField>
-          {!['executive', 'auditor'].includes(userForm.role) && <Box><Typography variant="body2" sx={{ mb: .5 }}>{userForm.role === 'subsidiary_head' ? 'Assign subsidiary access' : 'Assign site access'}</Typography>
+          {userForm.role !== 'auditor' && <Box><Typography variant="body2" sx={{ mb: .5 }}>Assign subsidiary access</Typography>
             {availableScopeIds.map((scope) => <FormControlLabel key={scope.id} control={<Checkbox checked={userForm.entityIds.includes(scope.id)} onChange={(event) => setUserForm((current) => ({ ...current, entityIds: event.target.checked ? [...current.entityIds, scope.id] : current.entityIds.filter((id) => id !== scope.id) }))} />} label={scope.name} />)}
             {availableScopeIds.length === 0 && <Alert severity="info">Create sites before assigning this account.</Alert>}
           </Box>}
           {userError && <Alert severity="error">{errorMessage(userError, 'Could not create this account.')}</Alert>}
         </Stack>
-      </DialogContent><DialogActions sx={{ p: 2.5 }}><Button onClick={() => setUserOpen(false)}>Cancel</Button><Button variant="contained" onClick={submitUser} disabled={creatingUser || !userForm.name || !userForm.email || userForm.password.length < 12 || (!['executive','auditor'].includes(userForm.role) && userForm.entityIds.length === 0)}>{creatingUser ? 'Creating…' : 'Create account'}</Button></DialogActions>
+      </DialogContent><DialogActions sx={{ p: 2.5 }}><Button onClick={() => setUserOpen(false)}>Cancel</Button><Button variant="contained" onClick={submitUser} disabled={creatingUser || !userForm.name || !userForm.email || userForm.password.length < 12 || (userForm.role !== 'auditor' && userForm.entityIds.length === 0)}>{creatingUser ? 'Creating…' : 'Create account'}</Button></DialogActions>
     </Dialog>
     <Drawer anchor="right" open={Boolean(selectedRecord)} onClose={() => setSelectedRecord(null)}>
       {selectedRecord && <Box sx={{ width: { xs: '100vw', sm: 420 }, p: 3 }}>

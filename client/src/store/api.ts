@@ -31,6 +31,8 @@ export interface Site { id: number; name: string; region: string; subsidiary: st
 export interface MetricTotal { metricCode: string; metric: string; unit: string; total: number; siteCount: number; period: string }
 export interface AuditEvent { id: string; action: string; rawValue: number; rawUnit: string; normalizedValue: number; normalizedUnit: string; formula: string | null; enteredBy: string; role: string; createdAt: string; evidenceId: number; evidenceHash: string; evidenceName: string }
 export interface AuthSession { token: string; user: { id: number; email: string; name: string; role: UserRole } }
+export interface PublicSite { id: number; name: string; region: string }
+export interface SignupRequest { id: string; name: string; email: string; role: 'engineer'; createdAt: string; sites: PublicSite[] }
 
 export const api = createApi({
   reducerPath: 'api',
@@ -43,7 +45,11 @@ export const api = createApi({
     },
   }),
   endpoints: (build) => ({
-    login: build.mutation<{ data: AuthSession }, { email: string; password: string }>({ query: (body) => ({ url: 'auth/login', method: 'POST', body }) }),
+    login: build.mutation<{ data: AuthSession }, { email: string; password: string; role: UserRole }>({ query: (body) => ({ url: 'auth/login', method: 'POST', body }) }),
+    getPublicSites: build.query<{ data: PublicSite[] }, void>({ query: () => 'auth/public/sites' }),
+    signup: build.mutation<{ message: string }, { name: string; email: string; password: string; role: 'engineer'; siteIds: number[] }>({ query: (body) => ({ url: 'auth/signup', method: 'POST', body }) }),
+    getSignupRequests: build.query<{ data: SignupRequest[] }, void>({ query: () => 'auth/requests', providesTags: ['SignupRequests'] }),
+    reviewSignup: build.mutation<{ message: string }, { id: string; decision: 'approve' | 'reject' }>({ query: ({ id, ...body }) => ({ url: `auth/requests/${id}`, method: 'PATCH', body }), invalidatesTags: ['SignupRequests'] }),
     getCurrentUser: build.query<{ data: AuthSession['user'] }, void>({ query: () => 'auth/me' }),
     createUser: build.mutation<{ data: { id: number; email: string; name: string; role: UserRole } }, { email: string; password: string; name: string; role: UserRole; entityIds: number[] }>({ query: (body) => ({ url: 'auth/users', method: 'POST', body }) }),
     reviewRecord: build.mutation<{ data: { id: string; reviewStatus: string } }, { id: string; status: 'approved' | 'rejected'; note: string }>({
@@ -62,7 +68,7 @@ export const api = createApi({
       invalidatesTags: ['Records'],
     }),
   }),
-  tagTypes: ['Records', 'Sites'],
+  tagTypes: ['Records', 'Sites', 'SignupRequests'],
 })
 
-export const { useLoginMutation, useGetCurrentUserQuery, useCreateUserMutation, useReviewRecordMutation, useGetRecordsQuery, useGetRecordAuditQuery, useGetSitesQuery, useCreateSiteMutation, useGetMetricsQuery, useCreateRecordMutation } = api
+export const { useLoginMutation, useGetCurrentUserQuery, useCreateUserMutation, useReviewRecordMutation, useGetRecordsQuery, useGetRecordAuditQuery, useGetSitesQuery, useCreateSiteMutation, useGetMetricsQuery, useCreateRecordMutation, useGetPublicSitesQuery, useSignupMutation, useGetSignupRequestsQuery, useReviewSignupMutation } = api
