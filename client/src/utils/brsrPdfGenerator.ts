@@ -153,7 +153,7 @@ export function generateBrsrPdf(dossier: BrsrFullDossier): jsPDF {
     startY: currentY,
     margin: { left: margin, right: margin },
     head: [['S. No.', 'Description of Main Activity', 'Description of Business Activity', '% of Turnover']],
-    body: dossier.businessActivities.map((b) => [
+    body: dossier.businessActivities.map((b: any) => [
       b.id.toString(),
       b.mainActivity,
       b.businessActivity,
@@ -179,7 +179,7 @@ export function generateBrsrPdf(dossier: BrsrFullDossier): jsPDF {
     startY: currentY,
     margin: { left: margin, right: margin },
     head: [['S. No.', 'Product / Service', 'NIC Code', '% of Total Turnover Contributed']],
-    body: dossier.products.map((p) => [
+    body: dossier.products.map((p: any) => [
       p.id.toString(),
       p.productService,
       p.nicCode,
@@ -265,7 +265,7 @@ export function generateBrsrPdf(dossier: BrsrFullDossier): jsPDF {
     startY: currentY,
     margin: { left: margin, right: margin },
     head: [['S. No.', 'Entity Name', 'Relationship Type', '% Shares Held', 'Participates in Entity BRSR?']],
-    body: dossier.subsidiaries.map((s) => [
+    body: dossier.subsidiaries.map((s: any) => [
       s.id.toString(),
       s.name,
       s.type.toUpperCase(),

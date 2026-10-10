@@ -62,6 +62,7 @@ import { updateRecordStatus } from '../store/dataSlice'
 import { PendingApprovalsManager } from './PendingApprovalsManager'
 import { PublishedFormsManager } from './PublishedFormsManager'
 import { BrsrReportStudio } from './BrsrReportStudio'
+import { ExecutiveRollupCharts } from './ExecutiveRollupCharts'
 
 const currentPeriod = new Date().toISOString().slice(0, 7)
 type MetricCode =
@@ -403,6 +404,12 @@ export function RecordWorkspace() {
               ))}
             </TextField>
           </Stack>
+
+          {/* Executive Emissions Trajectory & Filing Readiness Charts */}
+          <ExecutiveRollupCharts
+            region={region}
+            onOpenReports={() => setWorkspaceTab(3)}
+          />
 
           {/* Clickable Metric Cards opening Slide-Over Audit Drawer */}
           <Box

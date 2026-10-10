@@ -4,15 +4,15 @@ export const esgTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#2563eb',
-      light: '#60a5fa',
-      dark: '#1d4ed8',
+      main: '#059669',
+      light: '#34d399',
+      dark: '#047857',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#0891b2',
-      light: '#22d3ee',
-      dark: '#0e7490',
+      main: '#0f766e',
+      light: '#2dd4bf',
+      dark: '#115e59',
       contrastText: '#ffffff',
     },
     background: {
@@ -118,10 +118,10 @@ export const esgTheme = createTheme({
           },
         },
         contained: {
-          backgroundColor: '#2563eb',
+          backgroundColor: '#059669',
           color: '#ffffff',
           '&:hover': {
-            backgroundColor: '#1d4ed8',
+            backgroundColor: '#047857',
           },
         },
         outlined: {
@@ -237,8 +237,8 @@ export const esgTheme = createTheme({
     MuiTabs: {
       styleOverrides: {
         indicator: {
-          backgroundColor: '#2563eb',
-          height: 2,
+          backgroundColor: '#059669',
+          height: 2.5,
         },
       },
     },
@@ -253,7 +253,7 @@ export const esgTheme = createTheme({
             borderColor: '#94a3b8',
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#2563eb',
+            borderColor: '#059669',
             borderWidth: '1.5px',
           },
         },
@@ -269,7 +269,7 @@ export const esgTheme = createTheme({
           fontSize: '0.875rem',
           color: '#64748b',
           '&.Mui-focused': {
-            color: '#0f172a',
+            color: '#065f46',
           },
         },
       },
@@ -283,7 +283,7 @@ export const esgTheme = createTheme({
         },
         bar: {
           borderRadius: 3,
-          backgroundColor: '#0891b2',
+          backgroundColor: '#059669',
         },
       },
     },

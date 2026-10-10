@@ -38,8 +38,6 @@ import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined'
 import ForestOutlinedIcon from '@mui/icons-material/ForestOutlined'
 import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined'
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
-import { useSelector } from 'react-redux'
-import type { RootState } from '../store'
 import { useGetBrsrReportQuery } from '../store/api'
 import { generateBrsrPdf } from '../utils/brsrPdfGenerator'
 import type { BrsrFullDossier } from '@my-app/common'
@@ -59,11 +57,9 @@ export const BrsrReportStudio: React.FC<BrsrReportStudioProps> = ({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [downloadSuccessToast, setDownloadSuccessToast] = useState<string | null>(null)
 
-  const cachedReport = useSelector((state: RootState) => state.data.brsrReport)
-  const { data: reportResponse, isLoading: queryLoading, error, refetch } = useGetBrsrReportQuery()
+  const { data: reportResponse, isLoading, error, refetch } = useGetBrsrReportQuery()
 
-  const dossier: BrsrFullDossier | undefined = cachedReport ?? reportResponse?.data
-  const isLoading = !dossier && queryLoading
+  const dossier: BrsrFullDossier | undefined = reportResponse?.data
 
   const handleDownloadPdf = () => {
     if (!dossier) return
@@ -578,7 +574,7 @@ export const BrsrReportStudio: React.FC<BrsrReportStudioProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {dossier.businessActivities.map((b) => (
+                  {dossier.businessActivities.map((b: any) => (
                     <TableRow key={b.id}>
                       <TableCell>{b.id}</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>{b.mainActivity}</TableCell>
@@ -682,7 +678,7 @@ export const BrsrReportStudio: React.FC<BrsrReportStudioProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {dossier.subsidiaries.map((s) => (
+                  {dossier.subsidiaries.map((s: any) => (
                     <TableRow key={s.id}>
                       <TableCell>{s.id}</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>{s.name}</TableCell>
