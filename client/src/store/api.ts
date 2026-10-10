@@ -83,6 +83,18 @@ export interface PublicSubsidiary {
   id: number
   name: string
   region: string
+  subHead?: {
+    id: number
+    name: string
+    email: string
+    designation?: string
+    department?: string
+    isApproved?: boolean
+    approvalStatus?: string
+  } | null
+  subHeadName?: string
+  subHeadTitle?: string
+  sites?: { id: number; name: string; region: string }[]
 }
 
 export interface PendingApprovalUser {
@@ -105,6 +117,7 @@ export interface PendingApprovalUser {
   createdAt: string
   sites?: { id: number; name: string; region: string }[]
   scopes?: { id: number; name: string; region: string; level: string }[]
+  company?: { id: number; name: string; region: string } | null
 }
 
 export interface PublishedForm {
@@ -128,6 +141,8 @@ export interface PublishedForm {
 
 export const api = createApi({
   reducerPath: 'api',
+  keepUnusedDataFor: 86400, // Retain query cache in Redux for 24 hours to prevent constant re-fetching delays
+  refetchOnMountOrArgChange: false, // Serve instant cached data from Redux without forced network delays
   baseQuery: fetchBaseQuery({
     baseUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api/v1/',
     prepareHeaders: (headers, { getState }) => {
@@ -197,7 +212,26 @@ export const api = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: ['PendingApprovals', 'CurrentUser'],
+      invalidatesTags: ['CurrentUser'],
+      async onQueryStarted({ id, decision, note }, { dispatch, queryFulfilled }) {
+        // Optimistic Redux state update for zero-latency UI response
+        const patchResult = dispatch(
+          api.util.updateQueryData('getPendingApprovals', undefined, (draft) => {
+            const user = draft.data.find((u) => u.id === Number(id))
+            if (user) {
+              user.approvalStatus = decision === 'approve' ? 'approved' : decision === 'reject' ? 'rejected' : 'pending'
+              user.isApproved = decision === 'approve'
+              if (note) user.reviewNote = note
+              user.reviewedAt = new Date().toISOString()
+            }
+          })
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
     }),
 
     // Public scopes for registration
@@ -231,7 +265,19 @@ export const api = createApi({
       }
     >({
       query: (body) => ({ url: 'forms', method: 'POST', body }),
-      invalidatesTags: ['Forms'],
+      async onQueryStarted(_body, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled
+          dispatch(
+            api.util.updateQueryData('getForms', undefined, (draft) => {
+              const exists = draft.data.some((f) => String(f.id) === String(res.data.id))
+              if (!exists) draft.data.unshift(res.data)
+            })
+          )
+        } catch {
+          // handled
+        }
+      },
     }),
 
     toggleFormStatus: build.mutation<{ message: string; data: { id: string; isActive: boolean } }, { id: string; isActive: boolean }>({
@@ -240,7 +286,22 @@ export const api = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: ['Forms'],
+      async onQueryStarted({ id, isActive }, { dispatch, queryFulfilled }) {
+        // Optimistic Redux state update for zero-latency switch toggle
+        const patchResult = dispatch(
+          api.util.updateQueryData('getForms', undefined, (draft) => {
+            const form = draft.data.find((f) => String(f.id) === String(id))
+            if (form) {
+              form.isActive = isActive
+            }
+          })
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
     }),
 
     // ESG Records
@@ -251,7 +312,19 @@ export const api = createApi({
 
     createRecord: build.mutation<{ data: EsgRecord }, FormData>({
       query: (body) => ({ url: 'records', method: 'POST', body }),
-      invalidatesTags: ['Records'],
+      async onQueryStarted(_body, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled
+          dispatch(
+            api.util.updateQueryData('getRecords', undefined, (draft) => {
+              const exists = draft.data.some((r) => r.id === res.data.id)
+              if (!exists) draft.data.unshift(res.data)
+            })
+          )
+        } catch {
+          // handled
+        }
+      },
     }),
 
     reviewRecord: build.mutation<
@@ -263,12 +336,30 @@ export const api = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: ['Records'],
+      async onQueryStarted({ id, status, note }, { dispatch, queryFulfilled, getState }) {
+        // Optimistic Redux state update for instant verification status change
+        const currentUser = (getState() as { auth?: { name?: string } }).auth?.name ?? 'Reviewer'
+        const patchResult = dispatch(
+          api.util.updateQueryData('getRecords', undefined, (draft) => {
+            const record = draft.data.find((r) => r.id === id)
+            if (record) {
+              record.reviewStatus = status
+              record.reviewedBy = currentUser
+              record.reviewNote = note
+              record.reviewedAt = new Date().toISOString()
+            }
+          })
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
     }),
 
     getRecordAudit: build.query<{ data: AuditEvent[] }, string>({
       query: (id) => `records/${id}/audit`,
-      providesTags: ['Records'],
     }),
 
     // Sites & Organization
@@ -282,7 +373,19 @@ export const api = createApi({
       { group: string; subsidiary: string; site: string; region: string }
     >({
       query: (body) => ({ url: 'sites', method: 'POST', body }),
-      invalidatesTags: ['Sites'],
+      async onQueryStarted(_body, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled
+          dispatch(
+            api.util.updateQueryData('getSites', undefined, (draft) => {
+              const exists = draft.data.some((s) => s.id === res.data.id)
+              if (!exists) draft.data.push(res.data)
+            })
+          )
+        } catch {
+          // handled
+        }
+      },
     }),
 
     getMetrics: build.query<{ data: MetricTotal[] }, string | void>({

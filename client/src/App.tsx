@@ -22,6 +22,7 @@ import { ApprovalPending } from './components/ApprovalPending'
 import { RecordWorkspace } from './components/RecordWorkspace'
 import { BrsrReportStudio } from './components/BrsrReportStudio'
 import { signOut, updateUser, type UserRole } from './store/authSlice'
+import { clearCachedData } from './store/dataSlice'
 import type { RootState, AppDispatch } from './store'
 import { api, useGetCurrentUserQuery } from './store/api'
 
@@ -63,6 +64,7 @@ export const App: React.FC = () => {
 
   const endSession = useCallback(() => {
     dispatch(signOut())
+    dispatch(clearCachedData())
     dispatch(api.util.resetApiState())
     setAuthView('landing')
   }, [dispatch])

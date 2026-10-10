@@ -197,6 +197,30 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
 
     const passwordHash = await hash(password, 12);
 
+    // Resolve subsidiary IDs and site IDs
+    const resolvedSubIds = new Set<number>(subsidiaryIds);
+    const resolvedSiteIds = new Set<number>(siteIds);
+
+    // If siteIds provided but no subsidiaryIds, deduce subsidiary from site parent
+    if (resolvedSiteIds.size > 0 && resolvedSubIds.size === 0) {
+      const allSites = await db.orm.public.EsgEntities.where((e) => e.level.eq('site')).all();
+      for (const sId of resolvedSiteIds) {
+        const found = allSites.find((s) => Number(s.id) === sId);
+        if (found && found.parentId) {
+          resolvedSubIds.add(Number(found.parentId));
+        }
+      }
+    }
+
+    let organizationName = '';
+    if (resolvedSubIds.size > 0) {
+      const allSubs = await db.orm.public.EsgEntities.where((e) => e.level.eq('subsidiary')).all();
+      const firstSub = allSubs.find((s) => resolvedSubIds.has(Number(s.id)));
+      if (firstSub) {
+        organizationName = firstSub.name;
+      }
+    }
+
     // Create user with Prisma ORM
     const createdUser = await db.orm.public.EsgUsers.create({
       name,
@@ -206,11 +230,12 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
       isProfileCompleted: false,
       isApproved: false,
       approvalStatus: 'pending',
+      organization: organizationName,
     });
 
-    // Assign site scopes for engineers
-    if (role === 'engineer' && siteIds.length > 0) {
-      for (const siteId of new Set(siteIds)) {
+    // Assign site scopes
+    if (resolvedSiteIds.size > 0) {
+      for (const siteId of resolvedSiteIds) {
         try {
           await db.orm.public.EsgUserScopes.create({
             userId: createdUser.id,
@@ -222,9 +247,9 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
       }
     }
 
-    // Assign subsidiary scopes for subsidiary_head
-    if (role === 'subsidiary_head' && subsidiaryIds.length > 0) {
-      for (const subId of new Set(subsidiaryIds)) {
+    // Assign subsidiary scopes (for both engineer and subsidiary_head)
+    if (resolvedSubIds.size > 0) {
+      for (const subId of resolvedSubIds) {
         try {
           await db.orm.public.EsgUserScopes.create({
             userId: createdUser.id,
@@ -329,19 +354,41 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    const resolvedSubIds = new Set<number>(data.subsidiaryIds || []);
+    const resolvedSiteIds = new Set<number>(data.siteIds || []);
+
+    if (resolvedSiteIds.size > 0 && resolvedSubIds.size === 0) {
+      const allSites = await db.orm.public.EsgEntities.where((e) => e.level.eq('site')).all();
+      for (const sId of resolvedSiteIds) {
+        const found = allSites.find((s) => Number(s.id) === sId);
+        if (found && found.parentId) {
+          resolvedSubIds.add(Number(found.parentId));
+        }
+      }
+    }
+
+    let organizationName = data.organization;
+    if ((!organizationName || organizationName === 'MEIL Group' || organizationName === 'MEIL Corporate Group') && resolvedSubIds.size > 0) {
+      const allSubs = await db.orm.public.EsgEntities.where((e) => e.level.eq('subsidiary')).all();
+      const firstSub = allSubs.find((s) => resolvedSubIds.has(Number(s.id)));
+      if (firstSub) {
+        organizationName = firstSub.name;
+      }
+    }
+
     const updated = await db.orm.public.EsgUsers.where((u) => u.id.eq(BigInt(req.user!.id))).update({
       phone: data.phone,
       employeeId: data.employeeId,
       department: data.department,
       designation: data.designation,
       qualifications: data.qualifications,
-      organization: data.organization,
+      organization: organizationName,
       location: data.location,
       isProfileCompleted: true,
     });
 
-    if (data.siteIds && data.siteIds.length > 0) {
-      for (const siteId of new Set(data.siteIds)) {
+    if (resolvedSiteIds.size > 0) {
+      for (const siteId of resolvedSiteIds) {
         try {
           await db.orm.public.EsgUserScopes.create({
             userId: BigInt(req.user!.id),
@@ -353,8 +400,8 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
       }
     }
 
-    if (data.subsidiaryIds && data.subsidiaryIds.length > 0) {
-      for (const subId of new Set(data.subsidiaryIds)) {
+    if (resolvedSubIds.size > 0) {
+      for (const subId of resolvedSubIds) {
         try {
           await db.orm.public.EsgUserScopes.create({
             userId: BigInt(req.user!.id),
@@ -401,8 +448,78 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
 }
 
 /**
+ * Helper to retrieve all subsidiary/company IDs associated with an engineer
+ * (via direct subsidiary scope, parent of assigned site, or organization match).
+ */
+export async function getEngineerSubsidiaryIds(engineerId: bigint | number): Promise<number[]> {
+  const allEntities = await db.orm.public.EsgEntities.all();
+  const entityMap = new Map<string, typeof allEntities[0]>(allEntities.map((e) => [e.id.toString(), e]));
+
+  const scopes = await db.orm.public.EsgUserScopes.where((s) => s.userId.eq(BigInt(engineerId))).all();
+  const subIds = new Set<number>();
+
+  for (const sc of scopes) {
+    const ent = entityMap.get(sc.entityId.toString());
+    if (!ent) continue;
+    if (ent.level === 'subsidiary') {
+      subIds.add(Number(ent.id));
+    } else if (ent.level === 'site' && ent.parentId) {
+      subIds.add(Number(ent.parentId));
+    }
+  }
+
+  // Fallback: match by user organization name
+  if (subIds.size === 0) {
+    const user = await db.orm.public.EsgUsers.where((u) => u.id.eq(BigInt(engineerId))).first();
+    if (user?.organization) {
+      const orgMatch = allEntities.find(
+        (e) => e.level === 'subsidiary' && e.name.toLowerCase().trim() === user.organization.toLowerCase().trim()
+      );
+      if (orgMatch) {
+        subIds.add(Number(orgMatch.id));
+      }
+    }
+  }
+
+  return Array.from(subIds);
+}
+
+/**
+ * Helper to retrieve all subsidiary/company IDs overseen by a subsidiary head.
+ */
+export async function getSubsidiaryHeadSubsidiaryIds(subHeadId: bigint | number): Promise<number[]> {
+  const allEntities = await db.orm.public.EsgEntities.all();
+  const scopes = await db.orm.public.EsgUserScopes.where((s) => s.userId.eq(BigInt(subHeadId))).all();
+  const subIds = new Set<number>();
+
+  for (const sc of scopes) {
+    const ent = allEntities.find((e) => e.id === sc.entityId);
+    if (ent && ent.level === 'subsidiary') {
+      subIds.add(Number(ent.id));
+    }
+  }
+
+  // Fallback: match by organization
+  if (subIds.size === 0) {
+    const user = await db.orm.public.EsgUsers.where((u) => u.id.eq(BigInt(subHeadId))).first();
+    if (user?.organization) {
+      const orgMatch = allEntities.find(
+        (e) => e.level === 'subsidiary' && e.name.toLowerCase().trim() === user.organization.toLowerCase().trim()
+      );
+      if (orgMatch) {
+        subIds.add(Number(orgMatch.id));
+      }
+    }
+  }
+
+  return Array.from(subIds);
+}
+
+/**
  * GET /api/v1/auth/pending-approvals
- * Pending Approvals list based on Role Hierarchy
+ * Pending Approvals list based on Role Hierarchy:
+ * - Subsidiary Heads can ONLY see site engineers belonging to the same company.
+ * - CSO Administrators can see all registrations across companies.
  */
 export async function getPendingApprovals(req: Request, res: Response, next: NextFunction) {
   try {
@@ -432,42 +549,49 @@ export async function getPendingApprovals(req: Request, res: Response, next: Nex
       }
     }
 
+    const allEntities = await db.orm.public.EsgEntities.all();
+
     if (currentUserRole === 'subsidiary_head') {
-      const allowedSiteIds = await accessibleSiteIds(req.user!);
+      const headSubIds = await getSubsidiaryHeadSubsidiaryIds(req.user!.id);
 
       const engineers = await db.orm.public.EsgUsers
         .where((u) => u.role.eq('engineer'))
         .orderBy((u) => u.createdAt.desc())
         .all();
 
-      const result = engineers
-        .map((u) => {
-          const sites = scopesByUser.get(u.id.toString())?.filter((e) => e.level === 'site') || [];
-          return {
-            id: Number(u.id),
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            phone: u.phone,
-            employeeId: u.employeeId,
-            department: u.department,
-            designation: u.designation,
-            qualifications: u.qualifications,
-            location: u.location,
-            organization: u.organization,
-            approvalStatus: u.approvalStatus,
-            isApproved: u.isApproved,
-            isProfileCompleted: u.isProfileCompleted,
-            reviewNote: u.reviewNote,
-            reviewedAt: u.reviewedAt,
-            createdAt: u.createdAt,
-            sites,
-          };
-        })
-        .filter((r) => {
-          if (allowedSiteIds === null) return true;
-          return r.sites.some((s) => allowedSiteIds.includes(s.id));
+      const result = [];
+      for (const u of engineers) {
+        const engSubIds = await getEngineerSubsidiaryIds(u.id);
+        const isSameCompany = engSubIds.some((id) => headSubIds.includes(id));
+        if (!isSameCompany) continue;
+
+        const userScopesList = scopesByUser.get(u.id.toString()) || [];
+        const sites = userScopesList.filter((e) => e.level === 'site');
+        const compEntity = allEntities.find((e) => e.level === 'subsidiary' && engSubIds.includes(Number(e.id)));
+
+        result.push({
+          id: Number(u.id),
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          phone: u.phone,
+          employeeId: u.employeeId,
+          department: u.department,
+          designation: u.designation,
+          qualifications: u.qualifications,
+          location: u.location,
+          organization: u.organization || (compEntity ? compEntity.name : ''),
+          approvalStatus: u.approvalStatus,
+          isApproved: u.isApproved,
+          isProfileCompleted: u.isProfileCompleted,
+          reviewNote: u.reviewNote,
+          reviewedAt: u.reviewedAt,
+          createdAt: u.createdAt,
+          sites,
+          scopes: userScopesList,
+          company: compEntity ? { id: Number(compEntity.id), name: compEntity.name, region: compEntity.region } : null,
         });
+      }
 
       return res.json({ data: result });
     }
@@ -478,26 +602,36 @@ export async function getPendingApprovals(req: Request, res: Response, next: Nex
         (u) => ['subsidiary_head', 'auditor', 'engineer'].includes(u.role)
       );
 
-      const result = managedUsers.map((u) => ({
-        id: Number(u.id),
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        phone: u.phone,
-        employeeId: u.employeeId,
-        department: u.department,
-        designation: u.designation,
-        qualifications: u.qualifications,
-        location: u.location,
-        organization: u.organization,
-        approvalStatus: u.approvalStatus,
-        isApproved: u.isApproved,
-        isProfileCompleted: u.isProfileCompleted,
-        reviewNote: u.reviewNote,
-        reviewedAt: u.reviewedAt,
-        createdAt: u.createdAt,
-        scopes: scopesByUser.get(u.id.toString()) || [],
-      }));
+      const result = [];
+      for (const u of managedUsers) {
+        const userScopesList = scopesByUser.get(u.id.toString()) || [];
+        const sites = userScopesList.filter((e) => e.level === 'site');
+        const engSubIds = await getEngineerSubsidiaryIds(u.id);
+        const compEntity = allEntities.find((e) => e.level === 'subsidiary' && engSubIds.includes(Number(e.id)));
+
+        result.push({
+          id: Number(u.id),
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          phone: u.phone,
+          employeeId: u.employeeId,
+          department: u.department,
+          designation: u.designation,
+          qualifications: u.qualifications,
+          location: u.location,
+          organization: u.organization || (compEntity ? compEntity.name : ''),
+          approvalStatus: u.approvalStatus,
+          isApproved: u.isApproved,
+          isProfileCompleted: u.isProfileCompleted,
+          reviewNote: u.reviewNote,
+          reviewedAt: u.reviewedAt,
+          createdAt: u.createdAt,
+          sites,
+          scopes: userScopesList,
+          company: compEntity ? { id: Number(compEntity.id), name: compEntity.name, region: compEntity.region } : null,
+        });
+      }
 
       return res.json({ data: result });
     }
@@ -508,7 +642,8 @@ export async function getPendingApprovals(req: Request, res: Response, next: Nex
 
 /**
  * PATCH /api/v1/auth/approvals/:id
- * Approve, reject, or reset a user approval status
+ * Approve, reject, or reset a user approval status.
+ * Subsidiary Heads can ONLY approve site engineers belonging to the SAME company.
  */
 export async function decideApproval(req: Request, res: Response, next: NextFunction) {
   const schema = z.object({
@@ -536,8 +671,21 @@ export async function decideApproval(req: Request, res: Response, next: NextFunc
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    if (currentUserRole === 'subsidiary_head' && targetUser.role !== 'engineer') {
-      return res.status(403).json({ message: 'Subsidiary Heads can only approve Site Engineers.' });
+    if (currentUserRole === 'subsidiary_head') {
+      if (targetUser.role !== 'engineer') {
+        return res.status(403).json({ message: 'Subsidiary Heads can only approve Site Engineers.' });
+      }
+
+      // STRICT VALIDATION: Subsidiary Head can only approve site engineers of the SAME company
+      const headSubIds = await getSubsidiaryHeadSubsidiaryIds(req.user!.id);
+      const engineerSubIds = await getEngineerSubsidiaryIds(targetUser.id);
+
+      const isSameCompany = engineerSubIds.some((id) => headSubIds.includes(id));
+      if (!isSameCompany) {
+        return res.status(403).json({
+          message: 'Access denied: Subsidiary Heads can only approve Site Engineers belonging to their own company.',
+        });
+      }
     }
 
     const isApproved = decision === 'approve';
@@ -591,19 +739,76 @@ export async function getPublicSites(_req: Request, res: Response, next: NextFun
 
 /**
  * GET /api/v1/auth/public/subsidiaries
- * Public subsidiaries list for Subsidiary Heads during registration
+ * Public subsidiaries list for registrations, including each company's designated Subsidiary Head
  */
 export async function getPublicSubsidiaries(_req: Request, res: Response, next: NextFunction) {
   try {
     await initDatabase();
     const subs = await db.orm.public.EsgEntities.where((e) => e.level.eq('subsidiary')).all();
+    const sites = await db.orm.public.EsgEntities.where((e) => e.level.eq('site')).all();
+    const subHeads = await db.orm.public.EsgUsers.where((u) => u.role.eq('subsidiary_head')).all();
+    const scopes = await db.orm.public.EsgUserScopes.all();
+
+    const userIdsByEntity = new Map<string, string[]>();
+    for (const sc of scopes) {
+      const entKey = sc.entityId.toString();
+      if (!userIdsByEntity.has(entKey)) {
+        userIdsByEntity.set(entKey, []);
+      }
+      userIdsByEntity.get(entKey)!.push(sc.userId.toString());
+    }
+
+    const subHeadById = new Map(subHeads.map((u) => [u.id.toString(), u]));
 
     const data = subs
-      .map((s) => ({
-        id: Number(s.id),
-        name: s.name,
-        region: s.region,
-      }))
+      .map((s) => {
+        const candidateUserIds = userIdsByEntity.get(s.id.toString()) || [];
+        const matchingHeads = candidateUserIds
+          .map((id) => subHeadById.get(id))
+          .filter((u): u is typeof subHeads[0] => Boolean(u));
+
+        if (matchingHeads.length === 0) {
+          const orgMatch = subHeads.find(
+            (sh) => sh.organization && sh.organization.toLowerCase().trim() === s.name.toLowerCase().trim()
+          );
+          if (orgMatch) matchingHeads.push(orgMatch);
+        }
+
+        const primaryHead =
+          matchingHeads.find((h) => h.isApproved && h.approvalStatus === 'approved') ||
+          matchingHeads.find((h) => h.approvalStatus !== 'rejected') ||
+          matchingHeads[0] ||
+          null;
+
+        const subSites = sites
+          .filter((st) => st.parentId === s.id)
+          .map((st) => ({
+            id: Number(st.id),
+            name: st.name,
+            region: st.region,
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        return {
+          id: Number(s.id),
+          name: s.name,
+          region: s.region,
+          subHead: primaryHead
+            ? {
+                id: Number(primaryHead.id),
+                name: primaryHead.name,
+                email: primaryHead.email,
+                designation: primaryHead.designation || 'Subsidiary Head',
+                department: primaryHead.department || '',
+                isApproved: Boolean(primaryHead.isApproved),
+                approvalStatus: primaryHead.approvalStatus,
+              }
+            : null,
+          subHeadName: primaryHead ? primaryHead.name : 'Unassigned / Awaiting Appointment',
+          subHeadTitle: primaryHead ? (primaryHead.designation || 'Subsidiary Head') : 'Position Open',
+          sites: subSites,
+        };
+      })
       .sort((a, b) => a.name.localeCompare(b.name));
 
     res.json({ data });

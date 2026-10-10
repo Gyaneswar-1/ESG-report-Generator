@@ -58,6 +58,7 @@ import {
 } from '../store/api'
 import type { RootState, AppDispatch } from '../store'
 import { setRegion } from '../store/authSlice'
+import { updateRecordStatus } from '../store/dataSlice'
 import { PendingApprovalsManager } from './PendingApprovalsManager'
 import { PublishedFormsManager } from './PublishedFormsManager'
 import { BrsrReportStudio } from './BrsrReportStudio'
@@ -123,8 +124,14 @@ export function RecordWorkspace() {
   const [reviewRecord, { isLoading: reviewing, error: reviewError }] = useReviewRecordMutation()
   const [createSite, { isLoading: creatingSite, error: siteError }] = useCreateSiteMutation()
 
-  const { data: siteData, isLoading: loadingSites, isError: sitesError } = useGetSitesQuery()
-  const { data: recordsData, isLoading: loadingRecords } = useGetRecordsQuery()
+  // Redux Cached Data (instant zero-delay rendering)
+  const cachedSites = useSelector((state: RootState) => state.data.sites)
+  const cachedRecords = useSelector((state: RootState) => state.data.records)
+  const cachedForms = useSelector((state: RootState) => state.data.forms)
+  const cachedMetrics = useSelector((state: RootState) => state.data.metrics[region || 'all'])
+
+  const { data: siteData, isLoading: loadingSitesQuery, isError: sitesError } = useGetSitesQuery()
+  const { data: recordsData, isLoading: loadingRecordsQuery } = useGetRecordsQuery()
   const { data: formsData } = useGetFormsQuery()
   const { data: metricData } = useGetMetricsQuery(region || undefined, { skip: role !== 'executive' })
 
@@ -137,10 +144,26 @@ export function RecordWorkspace() {
     { skip: !selectedRecord }
   )
 
-  const sites = siteData?.data ?? []
-  const records = recordsData?.data ?? []
-  const publishedForms = formsData?.data ?? []
-  const regions = [...new Set(sites.map((site) => site.region))].sort()
+  const sites = useMemo(
+    () => (cachedSites.length > 0 ? cachedSites : siteData?.data ?? []),
+    [cachedSites, siteData?.data]
+  )
+  const records = useMemo(
+    () => (cachedRecords.length > 0 ? cachedRecords : recordsData?.data ?? []),
+    [cachedRecords, recordsData?.data]
+  )
+  const publishedForms = useMemo(
+    () => (cachedForms.length > 0 ? cachedForms : formsData?.data ?? []),
+    [cachedForms, formsData?.data]
+  )
+  const regions = useMemo(() => [...new Set(sites.map((site) => site.region))].sort(), [sites])
+  const activeMetrics = useMemo(
+    () => (cachedMetrics && cachedMetrics.length > 0 ? cachedMetrics : metricData?.data ?? []),
+    [cachedMetrics, metricData?.data]
+  )
+
+  const loadingSites = sites.length === 0 && loadingSitesQuery
+  const loadingRecords = records.length === 0 && loadingRecordsQuery
 
   // Data Entry State for Engineer
   const [category, setCategory] = useState(0)
@@ -301,15 +324,18 @@ export function RecordWorkspace() {
     return fallback
   }
 
-  const activeMetrics = metricData?.data ?? []
   const canEnter = role === 'engineer'
 
   const decideReview = async (status: 'approved' | 'rejected') => {
     if (!selectedRecord) return
+    const recId = selectedRecord.id
+    const note = reviewNote
     try {
-      await reviewRecord({ id: selectedRecord.id, status, note: reviewNote }).unwrap()
+      // Optimistic Redux state update for instant UI feedback
+      dispatch(updateRecordStatus({ id: recId, reviewStatus: status, reviewNote: note }))
       setSelectedRecord(null)
       setReviewNote('')
+      await reviewRecord({ id: recId, status, note }).unwrap()
     } catch {
       // error handled
     }

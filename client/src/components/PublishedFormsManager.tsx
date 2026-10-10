@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   Alert,
   Box,
@@ -38,9 +38,13 @@ import {
   useGetSitesQuery,
   useToggleFormStatusMutation,
   type PublishedForm,
+  type Site,
 } from '../store/api'
 import type { UserRole } from '../store/authSlice'
 import { publishFormSchema, type FormField, type FormFieldType } from '@my-app/common'
+import { useDispatch, useSelector } from 'react-redux'
+import type { RootState, AppDispatch } from '../store'
+import { toggleFormStatusLocal } from '../store/dataSlice'
 
 interface PublishedFormsManagerProps {
   currentRole: UserRole
@@ -196,7 +200,10 @@ const fieldTypeLabels: Record<FormFieldType, { label: string; icon: React.ReactN
 }
 
 export const PublishedFormsManager: React.FC<PublishedFormsManagerProps> = ({ currentRole }) => {
-  const { data: formsData, isLoading, refetch } = useGetFormsQuery()
+  const dispatch = useDispatch<AppDispatch>()
+  const cachedForms = useSelector((state: RootState) => state.data.forms)
+  const cachedSites = useSelector((state: RootState) => state.data.sites)
+  const { data: formsData, isLoading: formsLoading, refetch } = useGetFormsQuery()
   const { data: sitesData } = useGetSitesQuery()
   const [createForm, { isLoading: isCreating }] = useCreateFormMutation()
   const [toggleStatus] = useToggleFormStatusMutation()
@@ -229,8 +236,15 @@ export const PublishedFormsManager: React.FC<PublishedFormsManagerProps> = ({ cu
     fields: [],
   })
 
-  const forms = formsData?.data ?? []
-  const sites = sitesData?.data ?? []
+  const forms: PublishedForm[] = useMemo(
+    () => (cachedForms.length > 0 ? cachedForms : formsData?.data ?? []),
+    [cachedForms, formsData?.data]
+  )
+  const sites: Site[] = useMemo(
+    () => (cachedSites.length > 0 ? cachedSites : sitesData?.data ?? []),
+    [cachedSites, sitesData?.data]
+  )
+  const isLoading = forms.length === 0 && formsLoading
 
   const handleApplyTemplate = (tmpl: (typeof defaultTemplates)[0]) => {
     setFormState({
@@ -330,10 +344,13 @@ export const PublishedFormsManager: React.FC<PublishedFormsManagerProps> = ({ cu
   }
 
   const handleToggle = async (form: PublishedForm) => {
+    // Optimistic Redux state update for instant UI feedback
+    dispatch(toggleFormStatusLocal({ id: form.id, isActive: !form.isActive }))
     try {
       await toggleStatus({ id: String(form.id), isActive: !form.isActive }).unwrap()
-      refetch()
     } catch {
+      // Rollback on failure
+      dispatch(toggleFormStatusLocal({ id: form.id, isActive: form.isActive }))
       setFeedback('Could not update form status.')
     }
   }

@@ -38,6 +38,8 @@ import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined'
 import ForestOutlinedIcon from '@mui/icons-material/ForestOutlined'
 import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined'
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
+import { useSelector } from 'react-redux'
+import type { RootState } from '../store'
 import { useGetBrsrReportQuery } from '../store/api'
 import { generateBrsrPdf } from '../utils/brsrPdfGenerator'
 import type { BrsrFullDossier } from '@my-app/common'
@@ -57,9 +59,11 @@ export const BrsrReportStudio: React.FC<BrsrReportStudioProps> = ({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [downloadSuccessToast, setDownloadSuccessToast] = useState<string | null>(null)
 
-  const { data: reportResponse, isLoading, error, refetch } = useGetBrsrReportQuery()
+  const cachedReport = useSelector((state: RootState) => state.data.brsrReport)
+  const { data: reportResponse, isLoading: queryLoading, error, refetch } = useGetBrsrReportQuery()
 
-  const dossier: BrsrFullDossier | undefined = reportResponse?.data
+  const dossier: BrsrFullDossier | undefined = cachedReport ?? reportResponse?.data
+  const isLoading = !dossier && queryLoading
 
   const handleDownloadPdf = () => {
     if (!dossier) return

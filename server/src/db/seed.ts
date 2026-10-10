@@ -181,6 +181,7 @@ export async function seedDatabase() {
     reviewNote: 'Verified site posting at Bhubaneswar Water Grid with operations head signoff.',
   });
   await addScope(priyanka.id, bhubaneswarSiteId);
+  await addScope(priyanka.id, waterSubId);
 
   const amit = await upsertUser({
     email: 'amit.das@meilpower.com',
@@ -200,6 +201,7 @@ export async function seedDatabase() {
     reviewNote: 'Approved for Rourkela 400kV substation grid reporting.',
   });
   await addScope(amit.id, rourkelaSiteId);
+  await addScope(amit.id, powerSubId);
 
   const rahul = await upsertUser({
     email: 'rahul.nayak@meilwater.com',
@@ -218,6 +220,7 @@ export async function seedDatabase() {
     location: 'Cuttack Pipeline Grid',
   });
   await addScope(rahul.id, cuttackSiteId);
+  await addScope(rahul.id, waterSubId);
 
   const deepak = await upsertUser({
     email: 'deepak.swain@meilinfra.com',
@@ -237,8 +240,9 @@ export async function seedDatabase() {
     reviewNote: 'Employee ID could not be validated with Vijayawada site HR roster. Contact site superintendent.',
   });
   await addScope(deepak.id, vijayawadaSiteId);
+  await addScope(deepak.id, infraSubId);
 
-  await upsertUser({
+  const manas = await upsertUser({
     email: 'manas.jena@meilpower.com',
     name: 'Manas Jena',
     passwordHash: defaultPasswordHash,
@@ -246,7 +250,9 @@ export async function seedDatabase() {
     isProfileCompleted: false,
     isApproved: false,
     approvalStatus: 'pending',
+    organization: 'MEIL Power & Renewables',
   });
+  await addScope(manas.id, powerSubId);
 
   // C) Auditor
   await upsertUser({

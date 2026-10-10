@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useDispatch } from 'react-redux'
+import React, { useMemo, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   Alert,
   Box,
@@ -7,9 +7,13 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  Chip,
   CircularProgress,
   Container,
+  IconButton,
+  InputAdornment,
   MenuItem,
+  Radio,
   Stack,
   Tab,
   Tabs,
@@ -24,8 +28,12 @@ import EngineeringOutlinedIcon from '@mui/icons-material/EngineeringOutlined'
 import SupervisorAccountOutlinedIcon from '@mui/icons-material/SupervisorAccountOutlined'
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined'
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined'
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded'
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import { signIn, type UserRole } from '../store/authSlice'
-import type { AppDispatch } from '../store'
+import type { AppDispatch, RootState } from '../store'
 import {
   useGetPublicSitesQuery,
   useGetPublicSubsidiariesQuery,
@@ -86,19 +94,55 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
   const [name, setName] = useState('')
   const [selectedSiteId, setSelectedSiteId] = useState<number | ''>('')
   const [selectedSubId, setSelectedSubId] = useState<number | ''>('')
+  const [companySearchQuery, setCompanySearchQuery] = useState('')
 
   const [login, { isLoading: isLoggingIn, error: loginError }] = useLoginMutation()
   const [signup, { isLoading: isSigningUp, error: signupError }] = useSignupMutation()
 
+  const cachedPublicSites = useSelector((state: RootState) => state.data.publicSites)
+  const cachedPublicSubs = useSelector((state: RootState) => state.data.publicSubsidiaries)
+
   const { data: publicSitesData } = useGetPublicSitesQuery(undefined, {
     skip: selectedRole !== 'engineer' || tabIndex !== 1,
   })
-  const { data: publicSubsData } = useGetPublicSubsidiariesQuery(undefined, {
-    skip: selectedRole !== 'subsidiary_head' || tabIndex !== 1,
+  const { data: publicSubsData, isLoading: isLoadingSubsQuery } = useGetPublicSubsidiariesQuery(undefined, {
+    skip: (selectedRole !== 'subsidiary_head' && selectedRole !== 'engineer') || tabIndex !== 1,
   })
 
-  const sites = publicSitesData?.data ?? []
-  const subsidiaries = publicSubsData?.data ?? []
+  const sites = useMemo(
+    () => (cachedPublicSites.length > 0 ? cachedPublicSites : publicSitesData?.data ?? []),
+    [cachedPublicSites, publicSitesData?.data]
+  )
+  const subsidiaries = useMemo(
+    () => (cachedPublicSubs.length > 0 ? cachedPublicSubs : publicSubsData?.data ?? []),
+    [cachedPublicSubs, publicSubsData?.data]
+  )
+  const isLoadingSubs = subsidiaries.length === 0 && isLoadingSubsQuery
+
+  const filteredSubsidiaries = useMemo(() => {
+    if (!companySearchQuery.trim()) return subsidiaries
+    const q = companySearchQuery.toLowerCase().trim()
+    return subsidiaries.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.region && s.region.toLowerCase().includes(q)) ||
+        (s.subHeadName && s.subHeadName.toLowerCase().includes(q)) ||
+        (s.subHeadTitle && s.subHeadTitle.toLowerCase().includes(q))
+    )
+  }, [subsidiaries, companySearchQuery])
+
+  const selectedCompany = useMemo(() => {
+    if (!selectedSubId) return null
+    return subsidiaries.find((s) => s.id === Number(selectedSubId)) || null
+  }, [subsidiaries, selectedSubId])
+
+  const availableSitesForCompany = useMemo(() => {
+    if (!selectedCompany) return []
+    if (selectedCompany.sites && selectedCompany.sites.length > 0) {
+      return selectedCompany.sites
+    }
+    return sites.filter((st) => st.subsidiary === selectedCompany.name)
+  }, [selectedCompany, sites])
 
   const isSignup = selectedRole !== 'executive' && tabIndex === 1
   const activeError = isSignup ? signupError : loginError
@@ -123,8 +167,13 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
           role: selectedRole,
         }
 
-        if (selectedRole === 'engineer' && selectedSiteId) {
-          payload.siteIds = [Number(selectedSiteId)]
+        if (selectedRole === 'engineer') {
+          if (selectedSubId) {
+            payload.subsidiaryIds = [Number(selectedSubId)]
+          }
+          if (selectedSiteId) {
+            payload.siteIds = [Number(selectedSiteId)]
+          }
         }
         if (selectedRole === 'subsidiary_head' && selectedSubId) {
           payload.subsidiaryIds = [Number(selectedSubId)]
@@ -306,19 +355,158 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
                   />
 
                   {isSignup && selectedRole === 'engineer' && (
-                    <TextField
-                      select
-                      label="Assigned Site (Optional - can be set in profile)"
-                      value={selectedSiteId}
-                      onChange={(e) => setSelectedSiteId(Number(e.target.value))}
+                    <Box
+                      sx={{
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 3,
+                        p: 2,
+                        bgcolor: '#f8fafc',
+                      }}
                     >
-                      <MenuItem value="">Select later in profile</MenuItem>
-                      {sites.map((s) => (
-                        <MenuItem key={s.id} value={s.id}>
-                          {s.name} {s.region ? `· ${s.region}` : ''}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <BusinessOutlinedIcon color="primary" fontSize="small" />
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                            Select Operating Company & Sub Head *
+                          </Typography>
+                        </Box>
+                        {selectedCompany && (
+                          <Chip
+                            icon={<CheckCircleRoundedIcon sx={{ fontSize: '14px !important' }} />}
+                            label="Selected"
+                            color="success"
+                            size="small"
+                            sx={{ fontWeight: 650, fontSize: '0.675rem' }}
+                          />
+                        )}
+                      </Box>
+
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                        The Subsidiary Head can only approve site engineers of the same company. Search and choose your company:
+                      </Typography>
+
+                      <TextField
+                        size="small"
+                        fullWidth
+                        placeholder="Search company by name (e.g. Water, Power, Infra)..."
+                        value={companySearchQuery}
+                        onChange={(e) => setCompanySearchQuery(e.target.value)}
+                        slotProps={{
+                          input: {
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <SearchRoundedIcon fontSize="small" sx={{ color: '#64748b' }} />
+                              </InputAdornment>
+                            ),
+                            endAdornment: companySearchQuery ? (
+                              <InputAdornment position="end">
+                                <IconButton size="small" onClick={() => setCompanySearchQuery('')} edge="end">
+                                  <ClearRoundedIcon fontSize="small" />
+                                </IconButton>
+                              </InputAdornment>
+                            ) : null,
+                          },
+                        }}
+                        sx={{ mb: 1.5, bgcolor: '#ffffff', borderRadius: 1 }}
+                      />
+
+                      <Stack spacing={1} sx={{ maxHeight: 200, overflowY: 'auto', pr: 0.5 }}>
+                        {isLoadingSubs ? (
+                          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                            <CircularProgress size={24} />
+                          </Box>
+                        ) : filteredSubsidiaries.length === 0 ? (
+                          <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                            No companies found matching "{companySearchQuery}".
+                          </Typography>
+                        ) : (
+                          filteredSubsidiaries.map((sub) => {
+                            const isSelected = selectedSubId === sub.id
+                            return (
+                              <Box
+                                key={sub.id}
+                                onClick={() => {
+                                  setSelectedSubId(sub.id)
+                                  setSelectedSiteId('')
+                                }}
+                                sx={{
+                                  p: 1.5,
+                                  borderRadius: 2,
+                                  border: '2px solid',
+                                  borderColor: isSelected ? '#0284c7' : '#e2e8f0',
+                                  bgcolor: isSelected ? '#f0f9ff' : '#ffffff',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: 1.5,
+                                  '&:hover': {
+                                    borderColor: isSelected ? '#0284c7' : '#94a3b8',
+                                    bgcolor: isSelected ? '#f0f9ff' : '#f8fafc',
+                                  },
+                                }}
+                              >
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 750, color: '#0f172a' }}>
+                                      {sub.name}
+                                    </Typography>
+                                    {sub.region && (
+                                      <Chip
+                                        label={sub.region}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ fontSize: '0.675rem', height: 20 }}
+                                      />
+                                    )}
+                                  </Box>
+
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.5 }}>
+                                    <SupervisorAccountOutlinedIcon sx={{ fontSize: 16, color: '#0284c7' }} />
+                                    <Typography variant="caption" sx={{ color: '#334155' }}>
+                                      Sub Head: <strong style={{ color: '#0369a1' }}>{sub.subHeadName || 'Unassigned'}</strong>
+                                      {sub.subHeadTitle ? ` (${sub.subHeadTitle})` : ''}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+
+                                <Radio checked={isSelected} size="small" />
+                              </Box>
+                            )
+                          })
+                        )}
+                      </Stack>
+
+                      {selectedCompany && (
+                        <Alert severity="info" sx={{ mt: 1.5, py: 0.5, px: 1.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
+                            Approving Sub Head: <strong>{selectedCompany.subHeadName || 'Subsidiary Head'}</strong> for <strong>{selectedCompany.name}</strong>.
+                          </Typography>
+                        </Alert>
+                      )}
+
+                      {selectedCompany && (
+                        <Box sx={{ mt: 1.5 }}>
+                          <TextField
+                            select
+                            fullWidth
+                            size="small"
+                            label="Assigned Site Facility (Optional)"
+                            value={selectedSiteId}
+                            onChange={(e) => setSelectedSiteId(Number(e.target.value))}
+                            helperText="Choose the site under this company, or assign later in profile"
+                          >
+                            <MenuItem value="">Assign specific site later in profile</MenuItem>
+                            {availableSitesForCompany.map((s) => (
+                              <MenuItem key={s.id} value={s.id}>
+                                {s.name} {s.region ? `· ${s.region}` : ''}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        </Box>
+                      )}
+                    </Box>
                   )}
 
                   {isSignup && selectedRole === 'subsidiary_head' && (
@@ -355,7 +543,7 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
                       isSigningUp ||
                       !email ||
                       !password ||
-                      (isSignup && (!name.trim() || password.length < 8))
+                      (isSignup && (!name.trim() || password.length < 8 || (selectedRole === 'engineer' && !selectedSubId)))
                     }
                     sx={{ minHeight: 48, fontWeight: 700, mt: 1 }}
                   >

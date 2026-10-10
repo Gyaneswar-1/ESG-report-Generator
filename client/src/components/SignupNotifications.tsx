@@ -1,19 +1,27 @@
 import { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Alert, Badge, Box, Button, IconButton, Popover, Stack, Typography } from '@mui/material'
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded'
 import { useGetPendingApprovalsQuery, useDecideApprovalMutation, type PendingApprovalUser } from '../store/api'
 import type { UserRole } from '../store/authSlice'
+import type { RootState, AppDispatch } from '../store'
+import { updateApprovalStatusLocal } from '../store/dataSlice'
 
 export function SignupNotifications({ role }: { role: UserRole }) {
+  const dispatch = useDispatch<AppDispatch>()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const canReview = role === 'subsidiary_head' || role === 'executive'
-  const { data, isLoading, error } = useGetPendingApprovalsQuery(undefined, {
+  const cachedApprovals = useSelector((state: RootState) => state.data.pendingApprovals)
+  const { data, isLoading: queryLoading, error } = useGetPendingApprovalsQuery(undefined, {
     skip: !canReview,
     pollingInterval: 30_000,
   })
   const [decide, { isLoading: deciding, error: reviewError }] = useDecideApprovalMutation()
   if (!canReview) return null
-  const requests = data?.data ?? []
+
+  const allUsers = cachedApprovals && cachedApprovals.length > 0 ? cachedApprovals : (data?.data ?? [])
+  const requests = allUsers.filter((u) => u.approvalStatus === 'pending')
+  const isLoading = allUsers.length === 0 && queryLoading
 
   return (
     <>
@@ -59,7 +67,10 @@ export function SignupNotifications({ role }: { role: UserRole }) {
                     size="small"
                     variant="contained"
                     disabled={deciding}
-                    onClick={() => decide({ id: request.id, decision: 'approve' })}
+                    onClick={() => {
+                      dispatch(updateApprovalStatusLocal({ id: request.id, status: 'approved' }))
+                      decide({ id: request.id, decision: 'approve' })
+                    }}
                   >
                     Approve
                   </Button>
@@ -67,7 +78,10 @@ export function SignupNotifications({ role }: { role: UserRole }) {
                     size="small"
                     color="error"
                     disabled={deciding}
-                    onClick={() => decide({ id: request.id, decision: 'reject' })}
+                    onClick={() => {
+                      dispatch(updateApprovalStatusLocal({ id: request.id, status: 'rejected' }))
+                      decide({ id: request.id, decision: 'reject' })
+                    }}
                   >
                     Reject
                   </Button>

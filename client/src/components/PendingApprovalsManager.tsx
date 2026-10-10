@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   Alert,
   Box,
@@ -40,6 +41,8 @@ import {
   type PendingApprovalUser,
 } from '../store/api'
 import type { UserRole } from '../store/authSlice'
+import type { RootState, AppDispatch } from '../store'
+import { updateApprovalStatusLocal } from '../store/dataSlice'
 
 interface PendingApprovalsManagerProps {
   currentRole: UserRole
@@ -55,7 +58,9 @@ const roleTitles: Record<string, string> = {
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected'
 
 export const PendingApprovalsManager: React.FC<PendingApprovalsManagerProps> = ({ currentRole }) => {
-  const { data, isLoading, refetch } = useGetPendingApprovalsQuery()
+  const dispatch = useDispatch<AppDispatch>()
+  const cachedApprovals = useSelector((state: RootState) => state.data.pendingApprovals)
+  const { data, isLoading: queryLoading } = useGetPendingApprovalsQuery()
   const [decideApproval, { isLoading: isDeciding }] = useDecideApprovalMutation()
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -68,7 +73,12 @@ export const PendingApprovalsManager: React.FC<PendingApprovalsManagerProps> = (
   const [dialogOpen, setDialogOpen] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
 
-  const allUsers = useMemo(() => data?.data ?? [], [data?.data])
+  const allUsers = useMemo(() => {
+    if (cachedApprovals && cachedApprovals.length > 0) return cachedApprovals
+    return data?.data ?? []
+  }, [cachedApprovals, data?.data])
+
+  const isLoading = allUsers.length === 0 && queryLoading
 
   // Count metrics
   const counts = useMemo(() => {
@@ -119,15 +129,21 @@ export const PendingApprovalsManager: React.FC<PendingApprovalsManagerProps> = (
 
   const handleConfirmDecision = async () => {
     if (!selectedUser) return
+    const userId = selectedUser.id
+    const dec = decisionType
+    const note = reviewNote
+    const normalizedStatus: 'approved' | 'rejected' | 'pending' =
+      dec === 'approve' ? 'approved' : dec === 'reject' ? 'rejected' : 'pending'
+    // Optimistic Redux state update for instant UI feedback
+    dispatch(updateApprovalStatusLocal({ id: userId, status: normalizedStatus, note }))
+    setDialogOpen(false)
     try {
       const res = await decideApproval({
-        id: selectedUser.id,
-        decision: decisionType,
-        note: reviewNote,
+        id: userId,
+        decision: dec,
+        note,
       }).unwrap()
       setFeedback(res.message)
-      setDialogOpen(false)
-      refetch()
     } catch (err: unknown) {
       setFeedback(
         typeof err === 'object' && err && 'data' in err && typeof err.data === 'object' && err.data && 'message' in err.data
@@ -158,6 +174,12 @@ export const PendingApprovalsManager: React.FC<PendingApprovalsManagerProps> = (
           {subtitle}
         </Typography>
       </Box>
+
+      {currentRole === 'subsidiary_head' && (
+        <Alert severity="info" sx={{ mb: 2.5 }}>
+          <strong>Same-Company Approval Policy:</strong> As a Subsidiary Head, you can only review and authorize Site Engineers belonging to your designated operating company. Registrations from other companies are strictly partitioned.
+        </Alert>
+      )}
 
       {feedback && (
         <Alert severity="info" onClose={() => setFeedback(null)} sx={{ mb: 2.5 }}>
@@ -571,6 +593,22 @@ export const PendingApprovalsManager: React.FC<PendingApprovalsManagerProps> = (
                     </Box>
                   )}
 
+                  {/* Company & Assigned facility */}
+                  {(user.company || user.organization) && (
+                    <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#475569' }}>
+                        Company Entity:
+                      </Typography>
+                      <Chip
+                        icon={<BusinessOutlinedIcon sx={{ fontSize: '14px !important', color: '#0369a1' }} />}
+                        label={user.company ? `${user.company.name}${user.company.region ? ` · ${user.company.region}` : ''}` : user.organization}
+                        size="small"
+                        sx={{ bgcolor: '#eff6ff', color: '#0369a1', borderColor: '#bfdbfe', fontWeight: 650 }}
+                        variant="outlined"
+                      />
+                    </Box>
+                  )}
+
                   {/* Assigned sites or scopes */}
                   {user.sites && user.sites.length > 0 && (
                     <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -651,7 +689,7 @@ export const PendingApprovalsManager: React.FC<PendingApprovalsManagerProps> = (
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {decisionType === 'approve'
-              ? `This will grant ${selectedUser?.name} full ${roleTitles[selectedUser?.role || '']} access to the reporting portal and project records.`
+              ? `This will grant ${selectedUser?.name} full ${roleTitles[selectedUser?.role || '']} access to the reporting portal for ${selectedUser?.company?.name || selectedUser?.organization || 'the designated operating company'}.`
               : decisionType === 'reject'
               ? `This will set the account for ${selectedUser?.name} to rejected/inactive, disabling access to project submission and management features.`
               : `This will reset the application status for ${selectedUser?.name} back to pending review.`}
