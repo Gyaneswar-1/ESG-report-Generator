@@ -10,7 +10,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined'
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined'
 import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined'
@@ -100,25 +99,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  placeItems: 'center',
-                  width: 36,
-                  height: 36,
-                  bgcolor: '#0f172a',
-                  color: '#ffffff',
-                  borderRadius: 1.5,
-                }}
-              >
-                <AssessmentOutlinedIcon fontSize="small" />
-              </Box>
               <Box>
                 <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', lineHeight: 1.1 }}>
-                  EcoTrace
+                  MEIL Sustainability Cloud
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
-                  Statutory ESG Disclosure Platform
+                  Statutory ESG Reporting & Intelligence Platform
                 </Typography>
               </Box>
             </Box>
@@ -164,8 +150,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               label="Enterprise ESG Intelligence & SEBI Compliance Automation"
               size="small"
               sx={{
-                bgcolor: '#e0e7ff',
-                color: '#3730a3',
+                bgcolor: '#dcfce7',
+                color: '#15803d',
                 fontWeight: 600,
                 mb: 2.5,
                 px: 1,
@@ -351,7 +337,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <Box sx={{ mt: 'auto', py: 3, bgcolor: '#ffffff', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
         <Container maxWidth="lg">
           <Typography variant="caption" color="text.secondary">
-            © 2026 EcoTrace ESG Automation System · Designed for Statutory SEBI BRSR Core & GRI Sustainability Disclosures
+            © 2026 MEIL Sustainability Cloud · Designed for Statutory SEBI BRSR Core & GRI Disclosures
           </Typography>
           {onSelectSuperAdmin && (
             <Box sx={{ mt: 1 }}>
