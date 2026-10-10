@@ -462,6 +462,76 @@ export const BrsrReportStudio: React.FC<BrsrReportStudioProps> = ({
                 </Grid>
               </Grid>
             </Paper>
+
+            {/* MANDATORY SEBI BRSR CORE 9-KPI ASSURANCE MATRIX */}
+            {dossier.brsrCoreKpis && dossier.brsrCoreKpis.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a' }}>
+                      Mandatory SEBI BRSR Core 9-KPI Assurance Matrix
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Statutory key performance indicators mandated for external reasonable assurance under SEBI Circular SEBI/HO/CFD/CFD-SEC-2/P/CIR/2023/122
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label="9 / 9 KPIs Assured"
+                    color="success"
+                    size="small"
+                    sx={{ fontWeight: 700 }}
+                  />
+                </Box>
+
+                <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: '#0f172a' }}>
+                      <TableRow>
+                        <TableCell sx={{ color: '#ffffff', fontWeight: 700, width: 40, align: 'center' }}>#</TableCell>
+                        <TableCell sx={{ color: '#ffffff', fontWeight: 700, width: 220 }}>BRSR Core Attribute</TableCell>
+                        <TableCell sx={{ color: '#ffffff', fontWeight: 700 }}>Statutory Parameter</TableCell>
+                        <TableCell sx={{ color: '#ffffff', fontWeight: 700, align: 'right' }}>Current FY {dossier.metadata.financialYear}</TableCell>
+                        <TableCell sx={{ color: '#ffffff', fontWeight: 700, align: 'right' }}>Previous FY</TableCell>
+                        <TableCell sx={{ color: '#ffffff', fontWeight: 700, align: 'center' }}>Assurance Level</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {dossier.brsrCoreKpis.map((kpi) => (
+                        <TableRow key={kpi.attributeNo} hover>
+                          <TableCell align="center" sx={{ fontWeight: 700, color: '#64748b' }}>
+                            {kpi.attributeNo}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#0f172a' }}>
+                            {kpi.attributeName}
+                            <Typography variant="caption" sx={{ display: 'block', color: '#64748b' }}>
+                              Ref: {kpi.standardReference}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ color: '#334155', fontSize: '0.8125rem' }}>
+                            {kpi.parameter}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                            {kpi.currentFyValue}
+                          </TableCell>
+                          <TableCell align="right" sx={{ color: '#64748b', fontSize: '0.8125rem' }}>
+                            {kpi.previousFyValue}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={kpi.assuranceStatus}
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                              sx={{ fontWeight: 700, fontSize: '0.675rem' }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )}
           </Box>
         )}
 

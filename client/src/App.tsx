@@ -40,9 +40,37 @@ export const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>()
 
   // Navigation state when unauthenticated
+  const checkIsAdminRoute = () => {
+    const path = window.location.pathname.toLowerCase()
+    const hash = window.location.hash.toLowerCase()
+    const search = window.location.search.toLowerCase()
+    return (
+      path === '/admin' ||
+      path === '/super-admin' ||
+      path === '/cso' ||
+      hash === '#admin' ||
+      hash === '#/admin' ||
+      search.includes('role=executive') ||
+      search.includes('role=admin')
+    )
+  }
+
+  const [isAdminRoute, setIsAdminRoute] = useState<boolean>(checkIsAdminRoute())
   const [authView, setAuthView] = useState<'landing' | 'auth'>('landing')
   const [selectedInitialRole, setSelectedInitialRole] = useState<UserRole | null>(null)
   const [reportModalOpen, setReportModalOpen] = useState(false)
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setIsAdminRoute(checkIsAdminRoute())
+    }
+    window.addEventListener('popstate', handleUrlChange)
+    window.addEventListener('hashchange', handleUrlChange)
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange)
+      window.removeEventListener('hashchange', handleUrlChange)
+    }
+  }, [])
 
   // Sync latest user details from server
   const { data: userData, error: sessionError } = useGetCurrentUserQuery(undefined, {
@@ -66,6 +94,8 @@ export const App: React.FC = () => {
     dispatch(signOut())
     dispatch(clearCachedData())
     dispatch(api.util.resetApiState())
+    window.history.pushState(null, '', '/')
+    setIsAdminRoute(false)
     setAuthView('landing')
   }, [dispatch])
 
@@ -84,22 +114,47 @@ export const App: React.FC = () => {
     setAuthView('auth')
   }
 
+  const handleOpenSuperAdmin = () => {
+    window.history.pushState(null, '', '/admin')
+    setIsAdminRoute(true)
+    setAuthView('auth')
+  }
+
+  const handleBackToLanding = () => {
+    window.history.pushState(null, '', '/')
+    setIsAdminRoute(false)
+    setAuthView('landing')
+  }
+
   // Determine current screen
   const renderContent = () => {
     // 1. Not logged in
     if (!token || !role) {
+      if (isAdminRoute) {
+        return (
+          <RoleEntry
+            isSuperAdminOnly={true}
+            initialRole="executive"
+            onBackToLanding={handleBackToLanding}
+          />
+        )
+      }
+
       if (authView === 'landing') {
         return (
           <LandingPage
             onSelectRole={handleSelectRoleFromLanding}
             onOpenAuth={handleOpenAuth}
+            onSelectSuperAdmin={handleOpenSuperAdmin}
           />
         )
       }
       return (
         <RoleEntry
+          isSuperAdminOnly={false}
           initialRole={selectedInitialRole}
-          onBackToLanding={() => setAuthView('landing')}
+          onBackToLanding={handleBackToLanding}
+          onSelectSuperAdmin={handleOpenSuperAdmin}
         />
       )
     }

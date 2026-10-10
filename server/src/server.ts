@@ -11,7 +11,12 @@ import reports from './routes/reports.routes.js';
 
 export const app: Application = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN }));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || true,
+    exposedHeaders: ['X-Content-SHA256', 'Content-Disposition'],
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 app.use(morganMiddleware);

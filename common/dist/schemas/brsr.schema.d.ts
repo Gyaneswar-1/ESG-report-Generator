@@ -123,6 +123,37 @@ export declare const brsrSafetyMetricsSchema: z.ZodObject<{
     healthInsuranceCoveragePercent: z.ZodDefault<z.ZodNumber>;
 }, z.core.$strip>;
 export type BrsrSafetyMetrics = z.infer<typeof brsrSafetyMetricsSchema>;
+export declare const brsrCoreKpiSchema: z.ZodObject<{
+    attributeNo: z.ZodNumber;
+    attributeName: z.ZodString;
+    parameter: z.ZodString;
+    currentFyValue: z.ZodString;
+    previousFyValue: z.ZodString;
+    unit: z.ZodString;
+    assuranceStatus: z.ZodEnum<{
+        "Reasonable Assurance": "Reasonable Assurance";
+        "Limited Assurance": "Limited Assurance";
+        Audited: "Audited";
+        "Self-Declared": "Self-Declared";
+    }>;
+    standardReference: z.ZodString;
+}, z.core.$strip>;
+export type BrsrCoreKpi = z.infer<typeof brsrCoreKpiSchema>;
+export declare const brsrAuditorAssuranceStatementSchema: z.ZodObject<{
+    provider: z.ZodDefault<z.ZodString>;
+    leadAuditor: z.ZodDefault<z.ZodString>;
+    registrationNumber: z.ZodDefault<z.ZodString>;
+    standard: z.ZodDefault<z.ZodString>;
+    opinionType: z.ZodDefault<z.ZodEnum<{
+        "Reasonable Assurance": "Reasonable Assurance";
+        "Limited Assurance": "Limited Assurance";
+        "Unqualified Opinion": "Unqualified Opinion";
+    }>>;
+    opinionText: z.ZodDefault<z.ZodString>;
+    signedAt: z.ZodDefault<z.ZodString>;
+    signatureHash: z.ZodDefault<z.ZodString>;
+}, z.core.$strip>;
+export type BrsrAuditorAssuranceStatement = z.infer<typeof brsrAuditorAssuranceStatementSchema>;
 export declare const brsrFullDossierSchema: z.ZodObject<{
     metadata: z.ZodObject<{
         cin: z.ZodDefault<z.ZodString>;
@@ -236,6 +267,35 @@ export declare const brsrFullDossierSchema: z.ZodObject<{
         highConsequenceInjuries: z.ZodDefault<z.ZodNumber>;
         healthInsuranceCoveragePercent: z.ZodDefault<z.ZodNumber>;
     }, z.core.$strip>;
+    brsrCoreKpis: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodObject<{
+        attributeNo: z.ZodNumber;
+        attributeName: z.ZodString;
+        parameter: z.ZodString;
+        currentFyValue: z.ZodString;
+        previousFyValue: z.ZodString;
+        unit: z.ZodString;
+        assuranceStatus: z.ZodEnum<{
+            "Reasonable Assurance": "Reasonable Assurance";
+            "Limited Assurance": "Limited Assurance";
+            Audited: "Audited";
+            "Self-Declared": "Self-Declared";
+        }>;
+        standardReference: z.ZodString;
+    }, z.core.$strip>>>>;
+    auditorAssurance: z.ZodOptional<z.ZodObject<{
+        provider: z.ZodDefault<z.ZodString>;
+        leadAuditor: z.ZodDefault<z.ZodString>;
+        registrationNumber: z.ZodDefault<z.ZodString>;
+        standard: z.ZodDefault<z.ZodString>;
+        opinionType: z.ZodDefault<z.ZodEnum<{
+            "Reasonable Assurance": "Reasonable Assurance";
+            "Limited Assurance": "Limited Assurance";
+            "Unqualified Opinion": "Unqualified Opinion";
+        }>>;
+        opinionText: z.ZodDefault<z.ZodString>;
+        signedAt: z.ZodDefault<z.ZodString>;
+        signatureHash: z.ZodDefault<z.ZodString>;
+    }, z.core.$strip>>;
     generatedAt: z.ZodString;
     generatedBy: z.ZodString;
     sha256VerificationHash: z.ZodString;

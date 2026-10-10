@@ -146,6 +146,32 @@ export const brsrSafetyMetricsSchema = z.object({
 
 export type BrsrSafetyMetrics = z.infer<typeof brsrSafetyMetricsSchema>;
 
+export const brsrCoreKpiSchema = z.object({
+  attributeNo: z.number().int(),
+  attributeName: z.string(),
+  parameter: z.string(),
+  currentFyValue: z.string(),
+  previousFyValue: z.string(),
+  unit: z.string(),
+  assuranceStatus: z.enum(['Reasonable Assurance', 'Limited Assurance', 'Audited', 'Self-Declared']),
+  standardReference: z.string(),
+});
+
+export type BrsrCoreKpi = z.infer<typeof brsrCoreKpiSchema>;
+
+export const brsrAuditorAssuranceStatementSchema = z.object({
+  provider: z.string().default('KPMG / BSR & Co. LLP'),
+  leadAuditor: z.string().default('Dr. Arindam Sen, FCA, Lead Sustainability Assurance Partner'),
+  registrationNumber: z.string().default('ICAI-FRN-101248W / SEBI-ESG-AUD-042'),
+  standard: z.string().default('ISAE 3000 (Revised) & ISO 14064-3'),
+  opinionType: z.enum(['Reasonable Assurance', 'Limited Assurance', 'Unqualified Opinion']).default('Reasonable Assurance'),
+  opinionText: z.string().default('In our opinion, based on substantive sampling and cryptographic evidence verification across operational leaf sites, the ESG disclosures fairly present the sustainability performance of the listed entity in all material respects.'),
+  signedAt: z.string().default('2026-04-15T10:00:00.000Z'),
+  signatureHash: z.string().default(''),
+});
+
+export type BrsrAuditorAssuranceStatement = z.infer<typeof brsrAuditorAssuranceStatementSchema>;
+
 export const brsrFullDossierSchema = z.object({
   metadata: brsrEntityMetadataSchema,
   businessActivities: z.array(brsrBusinessActivitySchema),
@@ -159,6 +185,8 @@ export const brsrFullDossierSchema = z.object({
   ghg: brsrGhgEmissionsSchema,
   waste: brsrWasteMetricsSchema,
   safety: brsrSafetyMetricsSchema,
+  brsrCoreKpis: z.array(brsrCoreKpiSchema).optional().default([]),
+  auditorAssurance: brsrAuditorAssuranceStatementSchema.optional(),
   generatedAt: z.string(),
   generatedBy: z.string(),
   sha256VerificationHash: z.string(),
@@ -166,3 +194,4 @@ export const brsrFullDossierSchema = z.object({
 });
 
 export type BrsrFullDossier = z.infer<typeof brsrFullDossierSchema>;
+

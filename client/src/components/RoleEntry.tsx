@@ -44,6 +44,8 @@ import {
 interface RoleEntryProps {
   initialRole?: UserRole | null
   onBackToLanding?: () => void
+  isSuperAdminOnly?: boolean
+  onSelectSuperAdmin?: () => void
 }
 
 const roleInfo: {
@@ -85,9 +87,16 @@ const roleNames: Record<UserRole, string> = {
   auditor: 'Independent Auditor',
 }
 
-export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBackToLanding }) => {
+export const RoleEntry: React.FC<RoleEntryProps> = ({
+  initialRole = null,
+  onBackToLanding,
+  isSuperAdminOnly = false,
+  onSelectSuperAdmin,
+}) => {
   const dispatch = useDispatch<AppDispatch>()
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(initialRole)
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(
+    isSuperAdminOnly ? 'executive' : initialRole === 'executive' ? null : initialRole
+  )
   const [tabIndex, setTabIndex] = useState<number>(0) // 0: Login, 1: Signup
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -224,53 +233,63 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
                   width: 52,
                   height: 52,
                   borderRadius: 3,
-                  bgcolor: '#dbeafe',
+                  bgcolor: isSuperAdminOnly ? '#eef2ff' : '#dbeafe',
                 }}
               >
-                <PublicOutlinedIcon color="primary" sx={{ fontSize: 28 }} />
+                {isSuperAdminOnly ? (
+                  <SecurityOutlinedIcon sx={{ color: '#4f46e5', fontSize: 28 }} />
+                ) : (
+                  <PublicOutlinedIcon color="primary" sx={{ fontSize: 28 }} />
+                )}
               </Box>
               <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>
-                EcoTrace ESG Portal
+                {isSuperAdminOnly ? 'Corporate Super Admin Portal' : 'EcoTrace ESG Portal'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {selectedRole ? `${roleNames[selectedRole]} Authentication` : 'Select your designated role to enter'}
+                {isSuperAdminOnly
+                  ? 'Restricted Access: Enterprise Telemetry & Filing'
+                  : selectedRole
+                  ? `${roleNames[selectedRole]} Authentication`
+                  : 'Select your designated role to enter'}
               </Typography>
             </Stack>
 
             {!selectedRole ? (
               <Stack spacing={1.5}>
-                {roleInfo.map(({ role, title, detail, icon }) => (
-                  <Card
-                    key={role}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 2.5,
-                      transition: 'all 0.15s ease',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        bgcolor: '#f0fdfa',
-                        transform: 'translateY(-1px)',
-                      },
-                    }}
-                  >
-                    <CardActionArea
-                      onClick={() => {
-                        setSelectedRole(role)
-                        if (role === 'executive') setTabIndex(0)
+                {roleInfo
+                  .filter(({ role }) => (isSuperAdminOnly ? role === 'executive' : role !== 'executive'))
+                  .map(({ role, title, detail, icon }) => (
+                    <Card
+                      key={role}
+                      variant="outlined"
+                      sx={{
+                        borderRadius: 2.5,
+                        transition: 'all 0.15s ease',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          bgcolor: '#f0fdfa',
+                          transform: 'translateY(-1px)',
+                        },
                       }}
                     >
-                      <CardContent sx={{ py: 1.75, display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Box sx={{ p: 1, bgcolor: '#f1f5f9', borderRadius: 2 }}>{icon}</Box>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography sx={{ fontWeight: 750, color: '#0f172a' }}>{title}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {detail}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </CardActionArea>
-                  </Card>
-                ))}
+                      <CardActionArea
+                        onClick={() => {
+                          setSelectedRole(role)
+                          if (role === 'executive') setTabIndex(0)
+                        }}
+                      >
+                        <CardContent sx={{ py: 1.75, display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box sx={{ p: 1, bgcolor: '#f1f5f9', borderRadius: 2 }}>{icon}</Box>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography sx={{ fontWeight: 750, color: '#0f172a' }}>{title}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {detail}
+                            </Typography>
+                          </Box>
+                        </CardContent>
+                      </CardActionArea>
+                    </Card>
+                  ))}
 
                 {onBackToLanding && (
                   <Button
@@ -282,20 +301,46 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
                     Back to Overview
                   </Button>
                 )}
+
+                {!isSuperAdminOnly && onSelectSuperAdmin && (
+                  <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed #e2e8f0', textAlign: 'center' }}>
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={onSelectSuperAdmin}
+                      sx={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'none', '&:hover': { color: '#0f172a' } }}
+                    >
+                      Corporate Executive / Super Admin Portal &rarr;
+                    </Button>
+                  </Box>
+                )}
               </Stack>
             ) : (
               <>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Button
-                    size="small"
-                    startIcon={<ArrowBackRoundedIcon />}
-                    onClick={() => {
-                      setSelectedRole(null)
-                      setPassword('')
-                    }}
-                  >
-                    Change role
-                  </Button>
+                  {!isSuperAdminOnly ? (
+                    <Button
+                      size="small"
+                      startIcon={<ArrowBackRoundedIcon />}
+                      onClick={() => {
+                        setSelectedRole(null)
+                        setPassword('')
+                      }}
+                    >
+                      Change role
+                    </Button>
+                  ) : onBackToLanding ? (
+                    <Button
+                      size="small"
+                      startIcon={<ArrowBackRoundedIcon />}
+                      onClick={onBackToLanding}
+                      sx={{ color: 'text.secondary', textTransform: 'none' }}
+                    >
+                      Back to Overview
+                    </Button>
+                  ) : (
+                    <Box />
+                  )}
                   <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', bgcolor: '#eff6ff', px: 1, py: 0.5, borderRadius: 1 }}>
                     {roleNames[selectedRole]}
                   </Typography>

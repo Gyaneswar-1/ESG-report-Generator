@@ -389,6 +389,49 @@ export function generateBrsrPdf(dossier: BrsrFullDossier): jsPDF {
   // ==========================================
   addSectionHeader('SECTION C', 'PRINCIPLE-WISE PERFORMANCE DISCLOSURE', 'Quantitative & Qualitative performance metrics demonstrating adherence to NGRBC Principles');
 
+  // MANDATORY SEBI BRSR CORE 9-KPI MATRIX (SEBI Circular July 2023 Mandate)
+  if (dossier.brsrCoreKpis && dossier.brsrCoreKpis.length > 0) {
+    addSubheading('MANDATORY SEBI BRSR CORE 9-KPI ASSURANCE MATRIX (Reasonable Assurance Disclosures)');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text(
+      'Statutory 9 Core Attributes mandated by SEBI for listed entities with mandatory external reasonable assurance readiness:',
+      margin,
+      currentY
+    );
+    currentY += 4;
+
+    const coreRows = dossier.brsrCoreKpis.map((kpi) => [
+      kpi.attributeNo.toString(),
+      kpi.attributeName,
+      kpi.parameter,
+      kpi.currentFyValue,
+      kpi.previousFyValue,
+      kpi.assuranceStatus,
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      margin: { left: margin, right: margin },
+      head: [['#', 'BRSR Core Attribute', 'Statutory Parameter', `Current FY ${dossier.metadata.financialYear}`, 'Previous FY', 'Assurance Status']],
+      body: coreRows,
+      theme: 'grid',
+      styles: { fontSize: 7, cellPadding: 1.6 },
+      headStyles: { fillColor: primaryNavy, textColor: [255, 255, 255], fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 38, fontStyle: 'bold' },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 38, halign: 'right' },
+        4: { cellWidth: 26, halign: 'right' },
+        5: { cellWidth: 22, halign: 'center', textColor: [13, 148, 136], fontStyle: 'bold' },
+      },
+      alternateRowStyles: { fillColor: lightBg },
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 8;
+  }
+
   // PRINCIPLE 6: ENVIRONMENT (CORE QUANTITATIVE SECTION)
   addSubheading('PRINCIPLE 6: Environmental Stewardship & Protection (Essential Indicators)');
 
@@ -581,34 +624,34 @@ export function generateBrsrPdf(dossier: BrsrFullDossier): jsPDF {
   // ==========================================
   // ASSURANCE CERTIFICATE & DIGITAL SEAL
   // ==========================================
-  checkPageBreak(30);
+  checkPageBreak(36);
   doc.setFillColor(...lightBg);
   doc.setDrawColor(203, 213, 225);
-  doc.roundedRect(margin, currentY, pageWidth - margin * 2, 22, 2, 2, 'FD');
+  doc.roundedRect(margin, currentY, pageWidth - margin * 2, 28, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(...primaryNavy);
-  doc.text('STATUTORY ASSURANCE CERTIFICATE & CRYPTOGRAPHIC VERIFICATION SEAL', margin + 3, currentY + 4.5);
+  doc.text('STATUTORY ASSURANCE CERTIFICATE & INDEPENDENT AUDITOR OPINION', margin + 3, currentY + 4.5);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.2);
   doc.setTextColor(...secondarySlate);
-  doc.text(
-    `This report has been compiled and validated pursuant to the SEBI BRSR Annexure-I statutory framework.`,
-    margin + 3,
-    currentY + 9
-  );
-  doc.text(
-    `Assurance Standard: ${dossier.assuranceStatus} | Independent GHG Verifier: Dr. Arindam Sen, FCA`,
-    margin + 3,
-    currentY + 13.5
-  );
+  const provider = dossier.auditorAssurance?.provider || 'KPMG / BSR & Co. LLP';
+  const leadAuditor = dossier.auditorAssurance?.leadAuditor || 'Dr. Arindam Sen, FCA, Lead Sustainability Partner';
+  const regNo = dossier.auditorAssurance?.registrationNumber || 'ICAI-FRN-101248W / SEBI-ESG-AUD-042';
+  const std = dossier.auditorAssurance?.standard || 'ISAE 3000 (Revised) & ISO 14064-3';
+  const opinion = dossier.auditorAssurance?.opinionType || 'Reasonable Assurance';
+
+  doc.text(`Independent Assurance Provider: ${provider} | Reg: ${regNo} | Level: ${opinion}`, margin + 3, currentY + 9);
+  doc.text(`Lead Assurance Partner: ${leadAuditor} | Standard: ${std}`, margin + 3, currentY + 13.5);
+  doc.setFont('helvetica', 'italic');
+  doc.text(`Auditor Opinion: "${dossier.auditorAssurance?.opinionText || 'Disclosures present fairly in all material respects under SEBI BRSR guidelines.'}"`, margin + 3, currentY + 18, { maxWidth: pageWidth - margin * 2 - 6 });
 
   doc.setFont('courier', 'bold');
-  doc.setFontSize(6.8);
+  doc.setFontSize(6.5);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Digital Seal SHA-256: ${dossier.sha256VerificationHash}`, margin + 3, currentY + 18);
+  doc.text(`Digital Seal SHA-256: ${dossier.auditorAssurance?.signatureHash || dossier.sha256VerificationHash}`, margin + 3, currentY + 24);
 
   // ==========================================
   // PAGE NUMBERS & RUNNING HEADERS

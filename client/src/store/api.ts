@@ -397,6 +397,21 @@ export const api = createApi({
       query: () => 'reports/brsr/data',
       providesTags: ['Records', 'Sites'],
     }),
+
+    submitAuditorAssurance: build.mutation<
+      { success: boolean; data: any; message: string },
+      {
+        provider: string
+        leadAuditor: string
+        registrationNumber: string
+        standard: string
+        opinionType: string
+        opinionText: string
+      }
+    >({
+      query: (body) => ({ url: 'reports/brsr/assurance', method: 'POST', body }),
+      invalidatesTags: ['Records'],
+    }),
   }),
 })
 
@@ -420,4 +435,5 @@ export const {
   useCreateSiteMutation,
   useGetMetricsQuery,
   useGetBrsrReportQuery,
+  useSubmitAuditorAssuranceMutation,
 } = api

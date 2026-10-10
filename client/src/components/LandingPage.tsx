@@ -18,13 +18,13 @@ import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import EngineeringOutlinedIcon from '@mui/icons-material/EngineeringOutlined'
 import SupervisorAccountOutlinedIcon from '@mui/icons-material/SupervisorAccountOutlined'
-import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined'
 import type { UserRole } from '../store/authSlice'
 
 interface LandingPageProps {
   onSelectRole: (role: UserRole) => void
   onOpenAuth: () => void
+  onSelectSuperAdmin?: () => void
 }
 
 const roleCards: {
@@ -43,7 +43,7 @@ const roleCards: {
     tag: 'Leaf Node',
     points: [
       'Input raw metrics (diesel, electricity, water, waste)',
-      'Mandatory PDF / Image bill evidence uploads',
+      'Mandatory PDF / Image bill evidence uploads with SHA-256 seal',
       'View submissions in familiar site units with normalization tag',
     ],
   },
@@ -60,18 +60,6 @@ const roleCards: {
     ],
   },
   {
-    role: 'executive',
-    title: 'CSO / Super Admin',
-    subtitle: 'Enterprise Roll-Up & Statutory Filing',
-    icon: <SecurityOutlinedIcon sx={{ fontSize: 28, color: '#4f46e5' }} />,
-    tag: 'Executive Scope',
-    points: [
-      'Review & approve newly registered Subsidiary Heads',
-      'Dynamic real-time SUM() aggregation across 250+ sites',
-      'Slide-over audit drawer & SEBI Annexure-I PDF filing',
-    ],
-  },
-  {
     role: 'auditor',
     title: 'Independent Auditor',
     subtitle: 'Assurance Vault & Hash Verification',
@@ -85,7 +73,11 @@ const roleCards: {
   },
 ]
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onOpenAuth }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({
+  onSelectRole,
+  onOpenAuth,
+  onSelectSuperAdmin,
+}) => {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navbar */}
@@ -140,6 +132,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onOpenAu
                 variant="outlined"
                 sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
               />
+              {onSelectSuperAdmin && (
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={onSelectSuperAdmin}
+                  sx={{ color: '#475569', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'none' }}
+                >
+                  Super Admin Portal &rarr;
+                </Button>
+              )}
               <Button variant="contained" size="small" onClick={onOpenAuth} sx={{ fontWeight: 700, px: 2 }}>
                 Access Portal
               </Button>
@@ -287,7 +289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onOpenAu
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' }, gap: 2.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2.5 }}>
             {roleCards.map((card) => (
               <Card
                 key={card.role}
@@ -322,7 +324,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onOpenAu
                     <Box sx={{ borderTop: '1px solid #f1f5f9', pt: 1.5, mt: 'auto' }}>
                       <Stack spacing={0.75}>
                         {card.points.map((pt, idx) => (
-                          <Typography key={idx} variant="caption" sx={{ color: '#475569', display: 'flex', gap: 0.75 }}>
+                           <Typography key={idx} variant="caption" sx={{ color: '#475569', display: 'flex', gap: 0.75 }}>
                             <span style={{ color: '#0284c7' }}>•</span> {pt}
                           </Typography>
                         ))}
@@ -351,6 +353,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onOpenAu
           <Typography variant="caption" color="text.secondary">
             © 2026 EcoTrace ESG Automation System · Designed for Statutory SEBI BRSR Core & GRI Sustainability Disclosures
           </Typography>
+          {onSelectSuperAdmin && (
+            <Box sx={{ mt: 1 }}>
+              <Button
+                size="small"
+                variant="text"
+                onClick={onSelectSuperAdmin}
+                sx={{ color: '#94a3b8', fontSize: '0.75rem', textTransform: 'none', '&:hover': { color: '#0f172a' } }}
+              >
+                Corporate Governance: Super Admin Sign-In &rarr;
+              </Button>
+            </Box>
+          )}
         </Container>
       </Box>
     </Box>
