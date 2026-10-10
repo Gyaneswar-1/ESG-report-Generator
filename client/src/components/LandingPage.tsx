@@ -10,7 +10,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined'
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined'
 import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined'
@@ -108,19 +107,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onOpenAu
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  placeItems: 'center',
-                  width: 36,
-                  height: 36,
-                  bgcolor: '#0f172a',
-                  color: '#ffffff',
-                  borderRadius: 1.5,
-                }}
-              >
-                <AssessmentOutlinedIcon fontSize="small" />
-              </Box>
               <Box>
                 <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', lineHeight: 1.1 }}>
                   MEIL Sustainability Cloud

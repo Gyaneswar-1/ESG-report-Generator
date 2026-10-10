@@ -118,10 +118,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ open, onClose }) => {
                 Reporting Entity
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
-                Apex Holdings Ltd
+                MEIL Group (Megha Engineering & Infrastructures Ltd)
               </Typography>
               <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem' }}>
-                CIN: L24100MH2001PLC132904
+                CIN: U45200TG1989PLC013058
               </Typography>
             </Grid>
 
@@ -130,7 +130,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ open, onClose }) => {
                 Reporting Period
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
-                FY 2025-2026 (Annual)
+                FY 2024-2025 (Annual)
               </Typography>
               <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem' }}>
                 1 Apr 2025 – 31 Mar 2026

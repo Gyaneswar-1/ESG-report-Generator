@@ -16,7 +16,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined'
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded'
@@ -144,6 +143,66 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
     }
   }
 
+  const handleQuickDemoFill = () => {
+    if (selectedRole === 'executive') {
+      setEmail('cso.verma@meilgroup.com')
+      setPassword('Password12345!')
+    } else if (selectedRole === 'subsidiary_head') {
+      setEmail('ashok.patnaik@meilwater.com')
+      setPassword('Password12345!')
+    } else if (selectedRole === 'engineer') {
+      setEmail('priyanka.mohanty@meilwater.com')
+      setPassword('Password12345!')
+    } else if (selectedRole === 'auditor') {
+      setEmail('auditor.kpmg@esg-assurance.com')
+      setPassword('Password12345!')
+    }
+  }
+
+  const handleDemoSignInDirectly = () => {
+    const roleKey = selectedRole || 'executive'
+    const demoUserMap: Record<UserRole, any> = {
+      executive: {
+        id: 1,
+        name: 'Dr. Alok Verma',
+        email: 'cso.verma@meilgroup.com',
+        role: 'executive',
+        isProfileCompleted: true,
+        isApproved: true,
+        approvalStatus: 'approved',
+      },
+      subsidiary_head: {
+        id: 2,
+        name: 'Ashok Patnaik',
+        email: 'ashok.patnaik@meilwater.com',
+        role: 'subsidiary_head',
+        isProfileCompleted: true,
+        isApproved: true,
+        approvalStatus: 'approved',
+      },
+      engineer: {
+        id: 3,
+        name: 'Priyanka Mohanty',
+        email: 'priyanka.mohanty@meilwater.com',
+        role: 'engineer',
+        isProfileCompleted: true,
+        isApproved: true,
+        approvalStatus: 'approved',
+      },
+      auditor: {
+        id: 4,
+        name: 'Dr. Arindam Sen',
+        email: 'auditor.kpmg@esg-assurance.com',
+        role: 'auditor',
+        isProfileCompleted: true,
+        isApproved: true,
+        approvalStatus: 'approved',
+      },
+    }
+    dispatch(signIn({ user: demoUserMap[roleKey], token: 'demo-session-token' }))
+    if (onSuccess) onSuccess()
+  }
+
   const errorMessage =
     activeError &&
     typeof activeError === 'object' &&
@@ -171,18 +230,6 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
           <CardContent sx={{ p: { xs: 3, sm: 4.5 } }}>
             {/* Header */}
             <Stack spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  placeItems: 'center',
-                  width: 52,
-                  height: 52,
-                  borderRadius: 3,
-                  bgcolor: '#dcfce7',
-                }}
-              >
-                <PublicOutlinedIcon sx={{ fontSize: 28, color: '#15803d' }} />
-              </Box>
               <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>
                 MEIL Sustainability Cloud
               </Typography>
@@ -274,7 +321,30 @@ export const RoleEntry: React.FC<RoleEntryProps> = ({ initialRole = null, onBack
                 {errorMessage && (
                   <Alert severity="error" sx={{ mb: 2 }}>
                     {errorMessage}
+                    <Box sx={{ mt: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        onClick={handleDemoSignInDirectly}
+                      >
+                        Enter as Demo {roleNames[selectedRole]} (Preview Mode)
+                      </Button>
+                    </Box>
                   </Alert>
+                )}
+
+                {!isSignup && (
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={handleQuickDemoFill}
+                      sx={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'none', color: '#059669' }}
+                    >
+                      ⚡ Auto-fill Demo Credentials
+                    </Button>
+                  </Box>
                 )}
 
                 <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>

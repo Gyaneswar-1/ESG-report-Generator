@@ -69,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateCli
                   lineHeight: 1.2,
                 }}
               >
-                EcoPulse
+                MEIL ESG Portal
               </Typography>
               <Chip
                 label={roleNames[role]}
@@ -89,7 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateCli
               variant="caption"
               sx={{ color: '#64748b', fontSize: '0.725rem', display: 'block' }}
             >
-              Statutory Disclosure & Report Automation System
+              Megha Engineering & Infrastructures Ltd • Statutory Reporting
             </Typography>
           </Box>
         </Box>
@@ -109,13 +109,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenReportModal, onGenerateCli
         >
           <BusinessIcon sx={{ fontSize: 16, color: '#64748b' }} />
           <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
-            Apex Holdings Ltd
+            MEIL Group (Megha Engineering)
           </Typography>
           <Typography variant="caption" sx={{ color: '#94a3b8' }}>
             |
           </Typography>
           <Typography variant="body2" sx={{ color: '#475569', fontSize: '0.8rem' }}>
-            Cycle: FY 2025-26
+            Cycle: FY 2024-25
           </Typography>
           <Tooltip title="External Assurance Readiness: Clean Opinion">
             <Box sx={{ display: 'inline-flex', alignItems: 'center', ml: 0.5 }}>

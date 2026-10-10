@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   ThemeProvider,
   CssBaseline,
   Box,
   Tabs,
   Tab,
-  Paper,
   Chip,
   Button,
   Typography,
@@ -14,8 +14,15 @@ import {
   Avatar,
 } from '@mui/material'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 
 import { esgTheme } from './theme/theme'
+import { LandingPage } from './components/LandingPage'
+import { RoleEntry } from './components/RoleEntry'
+import { ProfileCompletion } from './components/ProfileCompletion'
+import { ApprovalPending } from './components/ApprovalPending'
+import { SignupNotifications } from './components/SignupNotifications'
+
 import { ReportGenerator } from './components/ReportGenerator'
 import { DisclosuresTable } from './components/DisclosuresTable'
 import { AuditLedger } from './components/AuditLedger'
@@ -29,6 +36,10 @@ import { CsoDashboard } from './components/CsoDashboard'
 import { SitesProjectsView } from './components/SitesProjectsView'
 import { UsersRolesView } from './components/UsersRolesView'
 import { SettingsView } from './components/SettingsView'
+
+import { signOut, updateUser, type UserRole } from './store/authSlice'
+import type { RootState, AppDispatch } from './store'
+import { api, useGetCurrentUserQuery } from './store/api'
 import type { PortalRole, SubmissionItem, EvidenceFile } from './types/dataEntry'
 
 const INITIAL_SUBMISSIONS: SubmissionItem[] = [
@@ -135,75 +146,194 @@ const INITIAL_SUBMISSIONS: SubmissionItem[] = [
   },
 ]
 
+function mapAuthRoleToPortalRole(role: UserRole | null | undefined): PortalRole {
+  if (role === 'engineer') return 'SITE_ENGINEER'
+  if (role === 'subsidiary_head') return 'SUBSIDIARY_HEAD'
+  if (role === 'auditor') return 'AUDITOR'
+  return 'CSO_ADMIN'
+}
+
 export const App: React.FC = () => {
-  // Primary role state: defaults to CSO_ADMIN (Corporate Overview)
+  const { role, name, token, isProfileCompleted, isApproved } = useSelector(
+    (state: RootState) => state.auth
+  )
+  const dispatch = useDispatch<AppDispatch>()
+
+  // Auth screen state
+  const [authView, setAuthView] = useState<'landing' | 'auth'>('landing')
+  const [selectedInitialRole, setSelectedInitialRole] = useState<UserRole | null>(null)
+
+  // Portal Navigation state
   const [currentRole, setCurrentRole] = useState<PortalRole>('CSO_ADMIN')
   const [activeNav, setActiveNav] = useState<string>('dashboard')
 
   // Statutory Report Modal
   const [reportModalOpen, setReportModalOpen] = useState(false)
 
-  // Submissions list
+  // Submissions State (Mocked Initial + Appends from form)
   const [submissions, setSubmissions] = useState<SubmissionItem[]>(INITIAL_SUBMISSIONS)
 
-  // Slide-Over Audit Drawer state (Screen 5)
+  // Audit Evidence Drawer State
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceFile | null>(null)
-  const [drawerMetric, setDrawerMetric] = useState('Diesel')
-  const [drawerSite, setDrawerSite] = useState('Bhubaneswar Water Grid')
+  const [drawerMetric, setDrawerMetric] = useState<string>('')
+  const [drawerSite, setDrawerSite] = useState<string>('')
 
-  const handleOpenEvidenceDrawer = (
-    evidence: EvidenceFile,
-    metricName: string = 'Diesel',
-    siteName: string = 'Bhubaneswar Water Grid'
-  ) => {
+  // Role Perspective Menu
+  const [roleMenuAnchor, setRoleMenuAnchor] = useState<null | HTMLElement>(null)
+
+  // Sync latest user profile and authorization status from server
+  const { data: userData, error: sessionError } = useGetCurrentUserQuery(undefined, {
+    skip: !token,
+    pollingInterval: 15000,
+  })
+
+  useEffect(() => {
+    if (userData?.data) {
+      dispatch(updateUser(userData.data))
+    }
+  }, [userData, dispatch])
+
+  // Update portal role perspective when Redux role updates
+  useEffect(() => {
+    if (role) {
+      setCurrentRole(mapAuthRoleToPortalRole(role))
+      if (role === 'engineer') {
+        setActiveNav('data-entry')
+      } else {
+        setActiveNav('dashboard')
+      }
+    }
+  }, [role])
+
+  const sessionExpired =
+    typeof sessionError === 'object' &&
+    sessionError !== null &&
+    'status' in sessionError &&
+    sessionError.status === 401
+
+  const endSession = useCallback(() => {
+    dispatch(signOut())
+    dispatch(api.util.resetApiState())
+    setAuthView('landing')
+    setCurrentRole('CSO_ADMIN')
+    setActiveNav('dashboard')
+  }, [dispatch])
+
+  useEffect(() => {
+    if (sessionExpired) endSession()
+  }, [sessionExpired, endSession])
+
+  const handleSelectRoleFromLanding = (selectedRole: UserRole) => {
+    setSelectedInitialRole(selectedRole)
+    setAuthView('auth')
+  }
+
+  const handleOpenAuth = () => {
+    setSelectedInitialRole(null)
+    setAuthView('auth')
+  }
+
+  // Handle new submission from SiteEngineerDataEntry
+  const handleNewSubmission = (submission: SubmissionItem) => {
+    setSubmissions((prev) => [submission, ...prev])
+    setActiveNav('my-submissions')
+  }
+
+  // Handle open evidence drawer
+  const handleOpenEvidenceDrawer = (evidence: EvidenceFile, metric?: string, site?: string) => {
     setSelectedEvidence(evidence)
-    setDrawerMetric(metricName)
-    setDrawerSite(siteName)
+    setDrawerMetric(metric || 'Environmental Metric')
+    setDrawerSite(site || 'Operational Facility')
     setDrawerOpen(true)
   }
 
   const handleCloseEvidenceDrawer = () => {
     setDrawerOpen(false)
+    setSelectedEvidence(null)
   }
 
-  const handleNewSubmission = (newSub: SubmissionItem) => {
-    setSubmissions((prev) => [newSub, ...prev])
-  }
-
-
-  const [roleMenuAnchor, setRoleMenuAnchor] = useState<null | HTMLElement>(null)
-
-  const getRoleDetails = (role: PortalRole) => {
-    switch (role) {
-      case 'SITE_ENGINEER':
-        return { initials: 'SE', label: 'Site Engineer', color: '#166534', bg: '#dcfce7' }
-      case 'CSO_ADMIN':
-        return { initials: 'CSO', label: 'CSO / Admin', color: '#1e3a8a', bg: '#dbeafe' }
-      case 'SUBSIDIARY_HEAD':
-        return { initials: 'SH', label: 'Subsidiary Head', color: '#0f766e', bg: '#ccfbf1' }
-      case 'AUDITOR':
-        return { initials: 'AU', label: 'Auditor (Verifier)', color: '#7e22ce', bg: '#f3e8ff' }
-    }
-  }
-
-  const currentRoleData = getRoleDetails(currentRole)
-
-  const handleRoleChange = (role: PortalRole) => {
-    setCurrentRole(role)
-    if (role === 'SITE_ENGINEER') {
+  const handleRoleChange = (newRole: PortalRole) => {
+    setCurrentRole(newRole)
+    setRoleMenuAnchor(null)
+    if (newRole === 'SITE_ENGINEER') {
       setActiveNav('data-entry')
     } else {
       setActiveNav('dashboard')
     }
-    setRoleMenuAnchor(null)
   }
 
-  return (
-    <ThemeProvider theme={esgTheme}>
-      <CssBaseline />
+  // Role metadata for perspective display
+  const roleDisplayConfig: Record<
+    PortalRole,
+    { label: string; initials: string; color: string; bg: string }
+  > = {
+    CSO_ADMIN: {
+      label: 'CSO Super Admin',
+      initials: 'AV',
+      color: '#059669',
+      bg: '#ecfdf5',
+    },
+    SUBSIDIARY_HEAD: {
+      label: 'Subsidiary Head',
+      initials: 'AP',
+      color: '#0d9488',
+      bg: '#f0fdfa',
+    },
+    SITE_ENGINEER: {
+      label: 'Site Engineer',
+      initials: 'PM',
+      color: '#0284c7',
+      bg: '#f0f9ff',
+    },
+    AUDITOR: {
+      label: 'Statutory Auditor',
+      initials: 'AS',
+      color: '#7c3aed',
+      bg: '#f5f3ff',
+    },
+  }
+
+  const currentRoleData = roleDisplayConfig[currentRole]
+
+  // Render Authentication / Verification Screens if not logged in & approved
+  const renderAuthOrPortal = () => {
+    // 1. Not logged in: Show Landing or RoleEntry
+    if (!token || !role) {
+      if (authView === 'landing') {
+        return (
+          <LandingPage
+            onSelectRole={handleSelectRoleFromLanding}
+            onOpenAuth={handleOpenAuth}
+          />
+        )
+      }
+      return (
+        <RoleEntry
+          initialRole={selectedInitialRole}
+          onBackToLanding={() => setAuthView('landing')}
+        />
+      )
+    }
+
+    // 2. Logged in, but profile not completed
+    if (!isProfileCompleted) {
+      return <ProfileCompletion />
+    }
+
+    // 3. Logged in, profile completed, but awaiting upper-level authorization
+    if (!isApproved && role !== 'executive') {
+      return (
+        <ApprovalPending
+          onEditProfile={() => dispatch(updateUser({ isProfileCompleted: false }))}
+        />
+      )
+    }
+
+    // 4. Logged in -> Profile completed -> Approved: Full Portal Interface
+    return (
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
-        {/* Sticky Site Header & Navbar */}
+        {/* Sticky Top Header Navigation */}
         <Box
           component="header"
           sx={{
@@ -212,7 +342,7 @@ export const App: React.FC = () => {
             position: 'sticky',
             top: 0,
             zIndex: 1100,
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.04)',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
           }}
         >
           {/* Top Brand & Actions Bar */}
@@ -227,11 +357,12 @@ export const App: React.FC = () => {
               justifyContent: 'space-between',
             }}
           >
+            {/* Brand Title: MEIL Sustainability Cloud (NO logo icon before it) + LIVE Chip */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Typography
                 variant="body2"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 750,
                   color: '#0f172a',
                   fontSize: { xs: '0.95rem', sm: '1.05rem' },
                   letterSpacing: '-0.01em',
@@ -253,6 +384,7 @@ export const App: React.FC = () => {
               />
             </Box>
 
+            {/* Right Action Icons & User Account */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Button
                 size="small"
@@ -269,6 +401,9 @@ export const App: React.FC = () => {
               >
                 Sample Statutory PDF
               </Button>
+
+              {/* Notification Popover for Heads/Admins to approve newly registered users */}
+              <SignupNotifications role={role} />
 
               {/* Role Perspective Selector */}
               <Button
@@ -302,9 +437,9 @@ export const App: React.FC = () => {
                     mr: 0.8,
                   }}
                 >
-                  {currentRoleData.initials}
+                  {(name || currentRoleData.initials).slice(0, 2).toUpperCase()}
                 </Avatar>
-                {currentRoleData.label}
+                {name || currentRoleData.label}
               </Button>
 
               <Menu
@@ -333,7 +468,7 @@ export const App: React.FC = () => {
                   onClick={() => handleRoleChange('CSO_ADMIN')}
                   sx={{ fontSize: '0.8rem', fontWeight: 600, borderRadius: 1 }}
                 >
-                  CSO / Super Admin
+                  CSO Super Admin (Corporate)
                 </MenuItem>
                 <MenuItem
                   selected={currentRole === 'SITE_ENGINEER'}
@@ -357,10 +492,28 @@ export const App: React.FC = () => {
                   Independent Auditor (Verifier)
                 </MenuItem>
               </Menu>
+
+              {/* Sign Out Button */}
+              <Button
+                color="inherit"
+                size="small"
+                onClick={endSession}
+                startIcon={<LogoutRoundedIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  px: 1,
+                  '&:hover': { color: '#0f172a' },
+                }}
+              >
+                Sign out
+              </Button>
             </Box>
           </Box>
 
-          {/* Site Navigation Tabs Bar */}
+          {/* Sticky Site Navigation Tabs Bar */}
           <Box sx={{ borderTop: '1px solid #f1f5f9', px: { xs: 2, sm: 3, md: 4 } }}>
             <Box sx={{ maxWidth: '1440px', mx: 'auto' }}>
               <Tabs
@@ -463,6 +616,13 @@ export const App: React.FC = () => {
         {/* Formal Statutory Report Inspection Modal */}
         <ReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
       </Box>
+    )
+  }
+
+  return (
+    <ThemeProvider theme={esgTheme}>
+      <CssBaseline />
+      {renderAuthOrPortal()}
     </ThemeProvider>
   )
 }
