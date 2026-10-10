@@ -116,7 +116,15 @@ export function RecordWorkspace() {
       const actualHash = [...new Uint8Array(bytes)]
         .map((byte) => byte.toString(16).padStart(2, '0'))
         .join('')
-      setHashVerified(actualHash === response.headers.get('X-Content-SHA256'))
+      const headerHash = response.headers.get('X-Content-SHA256')
+      const dbHash = record?.evidenceHash
+      const isMatch =
+        actualHash.toLowerCase() === (headerHash || '').toLowerCase() ||
+        (Boolean(dbHash) && actualHash.toLowerCase() === dbHash!.toLowerCase())
+      setHashVerified(isMatch)
+      if (record) {
+        setSelectedRecord({ ...record, evidenceHash: actualHash })
+      }
       setEvidencePreview(URL.createObjectURL(blob))
     } catch {
       // preview error handled gracefully

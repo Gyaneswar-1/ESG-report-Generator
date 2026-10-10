@@ -5,6 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { initDatabase } from './schema.js';
 import { db } from './client.js';
+import { generateEvidencePdf } from '../utils/pdfGenerator.js';
 
 export async function seedDatabase() {
   await initDatabase();
@@ -296,9 +297,26 @@ export async function seedDatabase() {
   const evidenceDir = resolve(process.env.ESG_UPLOAD_DIR ?? join(process.cwd(), 'uploads', 'evidence'));
   await mkdir(evidenceDir, { recursive: true });
 
-  async function createSeedEvidence(fileName: string, content: string) {
-    const buffer = Buffer.from(content);
-    const sha256 = createHash('sha256').update(buffer).digest('hex');
+  async function createSeedEvidence(params: {
+    fileName: string;
+    site: string;
+    metric: string;
+    metricCode: string;
+    value: string;
+    unit: string;
+    period: string;
+    reviewStatus?: string;
+  }) {
+    const { buffer, sha256 } = generateEvidencePdf({
+      fileName: params.fileName,
+      site: params.site,
+      metric: params.metric,
+      metricCode: params.metricCode,
+      value: params.value,
+      unit: params.unit,
+      period: params.period,
+      reviewStatus: params.reviewStatus || 'approved',
+    });
     const storagePath = join(evidenceDir, `${sha256}.pdf`);
     await writeFile(storagePath, buffer, { flag: 'w' });
 
@@ -306,7 +324,7 @@ export async function seedDatabase() {
     if (!ev) {
       ev = await db.orm.public.EsgEvidence.create({
         sha256,
-        fileName,
+        fileName: params.fileName,
         storagePath,
         mimeType: 'application/pdf',
         byteSize: BigInt(buffer.length),
@@ -315,26 +333,52 @@ export async function seedDatabase() {
     return { id: ev.id, sha256 };
   }
 
-  const ev1 = await createSeedEvidence(
-    'diesel_tax_invoice_may2026.pdf',
-    '%PDF-1.4\n%Indian Oil Corporation Diesel Bill #88412 - 5000 Liters - Bhubaneswar Water Grid\n%%EOF'
-  );
-  const ev2 = await createSeedEvidence(
-    'grid_utility_meter_may2026.pdf',
-    '%PDF-1.4\n%OPTCL Grid Power Substation Billing - 45 MWh - Rourkela Substation\n%%EOF'
-  );
-  const ev3 = await createSeedEvidence(
-    'water_intake_meter_apr2026.pdf',
-    '%PDF-1.4\n%Public Health Engineering Dept - Water Pumping Station - 12000 Liters\n%%EOF'
-  );
-  const ev4 = await createSeedEvidence(
-    'waste_manifest_apr2026.pdf',
-    '%PDF-1.4\n%Industrial Scrap & Waste Recycling Manifest #4921 - 2500 kg Recycled\n%%EOF'
-  );
-  const ev5 = await createSeedEvidence(
-    'disputed_fuel_slip_mar2026.pdf',
-    '%PDF-1.4\n%Handwritten Generator Fuel Slip - Disputed calibration 9500 Liters\n%%EOF'
-  );
+  const ev1 = await createSeedEvidence({
+    fileName: 'diesel_tax_invoice_may2026.pdf',
+    site: 'Bhubaneswar Water Grid',
+    metric: 'Diesel consumed',
+    metricCode: 'diesel',
+    value: '13.4',
+    unit: 'MT CO2e',
+    period: '2026-05',
+  });
+  const ev2 = await createSeedEvidence({
+    fileName: 'grid_utility_meter_may2026.pdf',
+    site: 'Rourkela Substation',
+    metric: 'Electricity consumed',
+    metricCode: 'electricity',
+    value: '45000',
+    unit: 'kWh',
+    period: '2026-05',
+  });
+  const ev3 = await createSeedEvidence({
+    fileName: 'water_intake_meter_apr2026.pdf',
+    site: 'Bhubaneswar Water Grid',
+    metric: 'Water intake and withdrawal',
+    metricCode: 'water',
+    value: '12',
+    unit: 'kL',
+    period: '2026-04',
+  });
+  const ev4 = await createSeedEvidence({
+    fileName: 'waste_manifest_apr2026.pdf',
+    site: 'Rourkela Substation',
+    metric: 'Hazardous & Non-hazardous waste recycled',
+    metricCode: 'waste',
+    value: '2.5',
+    unit: 'MT',
+    period: '2026-04',
+  });
+  const ev5 = await createSeedEvidence({
+    fileName: 'disputed_fuel_slip_mar2026.pdf',
+    site: 'Cuttack Pipeline Grid',
+    metric: 'Diesel consumed (Calibration dispute)',
+    metricCode: 'diesel',
+    value: '25.46',
+    unit: 'MT CO2e',
+    period: '2026-03',
+    reviewStatus: 'rejected',
+  });
 
   // 5. Seed ESG Records
   if (bhubaneswarSiteId) {
